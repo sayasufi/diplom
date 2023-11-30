@@ -1,0 +1,11 @@
+build
+dist
+.idea
+pyins.egg-info
+examples/.ipynb_checkpoints
+
+*.c
+*.so
+*.pyc
+
+.DS_store
