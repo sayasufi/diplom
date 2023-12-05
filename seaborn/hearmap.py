@@ -28,7 +28,7 @@ b = np.array(beacon_coordinates)
 x_coords = [point[0] for point in b]
 y_coords = [point[1] for point in b]
 print(x_coords, y_coords)
-df = pd.read_excel("test5.xlsx")
+df = pd.read_excel("test7.xlsx")
 
 x = df["x"]
 y = df["y"]

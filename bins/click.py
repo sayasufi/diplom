@@ -35,4 +35,4 @@ def raschet(n, x, y, beacon_coordinates):
 
     x_dist, y_dist = dist_least(beacon_coordinates, dist_with_pogr)
 
-    return x_dist, y_dist
+    return x_dist, y_dist, dist_with_pogr
