@@ -10,7 +10,7 @@ def distanse_eq(x, y, x1, y1):
     return math.sqrt((x - x1) ** 2 + (y - y1) ** 2)
 
 
-def raschet(n, x, y, beacon_coordinates):
+def raschet(n, x, y, beacon_coordinates, pred_x, pred_y):
     measured_distances = [0] * n
 
     for j in range(n):
@@ -33,6 +33,6 @@ def raschet(n, x, y, beacon_coordinates):
             )
         )
 
-    x_dist, y_dist = dist_least(beacon_coordinates, dist_with_pogr)
+    x_dist, y_dist = dist_least(beacon_coordinates, dist_with_pogr, pred_x, pred_y)
 
     return x_dist, y_dist, dist_with_pogr
