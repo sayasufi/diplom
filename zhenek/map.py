@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pyins
 import folium
 
-gnss = pd.read_csv("/home/semyon/PycharmProjects/diplom/zhenek/data_2/gnss.csv", index_col='time')
+gnss = pd.read_csv("/home/evgenii/PycharmProjects/diplom/zhenek/data/rtsln.csv", index_col='time')
 lat = gnss['lat']
 lon = gnss['lon']
 places = [[x[0], x[1]] for x in zip(lat, lon)]
