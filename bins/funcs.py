@@ -18,7 +18,7 @@ def dist2(beacon_coords, distances):
     return result.x
 
 
-def dist_least(beacon_coords, distances, pred_x, pred_y):
+def dist_least(beacon_coords, distances, pred_x, pred_y, pred_z):
     """С весами"""
     n = len(beacon_coords)
     max_dis = max(distances)
@@ -44,7 +44,7 @@ def dist_least(beacon_coords, distances, pred_x, pred_y):
         return weights * (np.linalg.norm(beacons - point, axis=1) - distances)
 
     # Начальное приближение для координат точки
-    initial_guess = np.array([pred_x, pred_y])
+    initial_guess = np.array([pred_x, pred_y, pred_z])
 
     # Решаем задачу методом взвешенных наименьших квадратов
     result = least_squares(fun, initial_guess)
