@@ -29,21 +29,23 @@ def calculate_smoothed_velocities(data, frequency):
     differences = np.diff(data)
 
     # Вычисляем скорости, разделив разницу на время
-    velocities = differences / time_step / 2
+    velocities = [0] * len(data)
+    for i in range(len(differences)-10):
+        velocities[i+5] = sum(differences[i:i+5]) / 2
 
     # Применяем фильтр скользящего среднего для сглаживания скоростей
-    smoothed_velocities = np.convolve(velocities, np.ones(100) / 100, mode="same")
+    smoothed_velocities = np.convolve(velocities, np.ones(30) / 30, mode="same")
 
-    smoothed_data = savgol_filter(smoothed_velocities, window_length=100, polyorder=3)
+    smoothed_data = savgol_filter(smoothed_velocities, window_length=30, polyorder=3)
 
     return smoothed_data
 
 
-# df = pd.read_csv("data/rtsln_filter_xy.csv")
-# df["VN"] = pd.Series(calculate_smoothed_velocities(list(df["y"]), 50))
-# df["VE"] = pd.Series(calculate_smoothed_velocities(list(df["x"]), 50))
-# df["VD"] = pd.Series(calculate_smoothed_velocities(list(df["alt"]), 50))
-# df.to_csv("data/rtsln_filter_xy.csv", index=False)
+df = pd.read_csv("data/rtsln_filter_xy.csv")
+df["VN"] = pd.Series(calculate_smoothed_velocities(list(df["y"]), 50))
+df["VE"] = pd.Series(calculate_smoothed_velocities(list(df["x"]), 50))
+df["VD"] = pd.Series(calculate_smoothed_velocities(list(df["alt"]), 50))
+df.to_csv("data/rtsln_filter_xy.csv", index=False)
 
 # df = pd.read_csv("data/rtsln_filter_xy.csv")
 # df1 = pd.read_csv("data/rtsln_filter.csv")
@@ -52,6 +54,6 @@ def calculate_smoothed_velocities(data, frequency):
 # df1["VD"] = df["VD"]
 # df1.to_csv("data/rtsln_filter.csv", index=False)
 
-df = pd.read_csv("data/imu.csv")
-df["accel_z"] = df["accel_z"] * -1
-df.to_csv("data/imu.csv", index=False)
+# df = pd.read_csv("data/imu.csv")
+# df["accel_z"] = df["accel_z"] * -1
+# df.to_csv("data/imu.csv", index=False)

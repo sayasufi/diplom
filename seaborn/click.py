@@ -1,13 +1,14 @@
+import logging
 import math
-import time
 import random
+import time
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pylab
-from funcs import dist_least, dist2
-import matplotlib.pyplot as plt
-from scipy.stats import gmean
-import logging
 from openpyxl import Workbook
+
+from funcs import dist_least
 
 logger = logging.getLogger()
 logger.setLevel(logging.NOTSET)
@@ -23,17 +24,12 @@ def distanse_eq(x, y, x1, y1):
 
 
 def beacons(radius, n):
-    n -= 1
-    points = []
-    step = 2 * math.pi / n
-    angle = [0]
-    points.append((radius * math.cos(angle[0]), radius * math.sin(angle[0])))
-    for i in range(1, n):
-        angle.append(angle[i - 1] + step)
-        x = radius * math.cos(angle[i])
-        y = radius * math.sin(angle[i])
-        points.append((x, y))
-    points.append((np.random.normal(0, 1, 1)[0], np.random.normal(0, 1, 1)[0]))
+    points = [(-200, 200),
+              (0, 200),
+              (200, 200),
+              (-200, -200),
+              (0, -200),
+              (200, -200)]
     return points
 
 
@@ -180,12 +176,12 @@ def raschet(n, x, y, beacon_coordinates):
     # plt.show()
 
 
-radius = 15000
-kolvo_mayak1 = [5]
+radius = 20000
+kolvo_mayak1 = [6]
 for kolvo_mayak in kolvo_mayak1:
     beacon_coordinates = beacons(radius, kolvo_mayak)
 
-    n = 900
+    n = 400
     m = round(math.sqrt(n))
     wb = Workbook()
     ws = wb.active
@@ -199,7 +195,7 @@ for kolvo_mayak in kolvo_mayak1:
         for j in range(-m, m):
             x = 15000 / m * j
             if x ** 2 + y ** 2 > 15000 ** 2:
-                logging.info(f'Пропущена точка ({x}, {y}), {sch} / {n*4}')
+                logging.info(f'Пропущена точка ({x}, {y}), {sch} / {n * 4}')
                 sch += 1
                 pass
             else:
@@ -208,7 +204,6 @@ for kolvo_mayak in kolvo_mayak1:
 
                 ws.append([schi, x, y, sko, mean, rmax])
                 sch += 1
-                logging.info(f'Кол-во маяков ={kolvo_mayak}. Выполнено {sch} / {n*4}')
+                logging.info(f'Кол-во маяков ={kolvo_mayak}. Выполнено {sch} / {n * 4}')
 
-    wb.save(f'test{kolvo_mayak}.xlsx')
-
+    wb.save(f'test222222.xlsx')

@@ -21,14 +21,14 @@ def beacons(radius, n):
     return points
 
 
-radius = 15000
-kolvo_mayak = 5
+radius = 20000
+kolvo_mayak = 6
 beacon_coordinates = beacons(radius, kolvo_mayak)
 b = np.array(beacon_coordinates)
 x_coords = [point[0] for point in b]
 y_coords = [point[1] for point in b]
 print(x_coords, y_coords)
-df = pd.read_excel("test5.xlsx")
+df = pd.read_excel("test222222.xlsx")
 
 x = df["x"]
 y = df["y"]

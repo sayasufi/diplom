@@ -28,7 +28,7 @@ IMU заранее компенсировал значительные откл�
 
 reference_trajectory = pd.read_csv("data/reference_trajectory.csv", index_col='time')
 imu = pd.read_csv("data/imu.csv", index_col='time')
-gnss = pd.read_csv("data/rtsln_filter.csv", index_col='time')
+gnss = pd.read_csv("data/rtsln_filter_ref.csv", index_col='time')
 
 
 
@@ -98,9 +98,10 @@ result = pyins.filters.run_feedback_filter(
 
 plt.plot(result.innovations['Position'], label=['lat', 'lon', 'alt'])
 plt.xlabel("System time, s")
-plt.title("Position normalized innovations")
 plt.legend()
+plt.savefig('png/2/1.png', dpi=600)
 plt.show()
+plt.clf()
 
 """
 Здесь мы видим, что количество нововведений не превышает 1 (что хорошо), 
@@ -113,15 +114,16 @@ plt.show()
 """
 
 plt.plot(result.innovations['NedVelocity'], label=['VN', 'VE', 'VD'])
-plt.xlabel("System time, s")
-plt.title("NED velocity normalized innovations")
 plt.legend()
+plt.tight_layout()
+plt.savefig('png/2/2.png', dpi=600)
 plt.show()
+plt.clf()
 
 """
-Почти то же самое можно сказать и об инновациях velocity. 
-Обычно ошибки скорости GNSS ведут себя скорее как некоррелированная последовательность, 
-но они более подвержены алгоритмическим задержкам из-за процесса фильтрации. 
+Почти то же самое можно сказать и об инновациях velocity.
+Обычно ошибки скорости GNSS ведут себя скорее как некоррелированная последовательность,
+но они более подвержены алгоритмическим задержкам из-за процесса фильтрации.
 Здесь также вероятно, что мы наблюдаем некоторые неоптимальности фильтра pyins.
 
 В целом, картина инноваций не выглядит ужасной для упрощенного фильтра pyins и внешних данных GNSS.
@@ -132,18 +134,12 @@ plt.show()
 
 trajectory_error = pyins.transform.compute_state_difference(result.trajectory, reference_trajectory)
 
-plt.figure(figsize=(10, 10))
 for i, col in enumerate(trajectory_error.columns, start=1):
-    plt.subplot(3, 3, i)
-    plt.plot(trajectory_error[col], label='error')
-    plt.plot(3 * result.trajectory_sd[col], 'k', label='3-sigma bounds')
-    plt.plot(-3 * result.trajectory_sd[col], 'k')
-    plt.legend()
-    plt.title(col)
-
-plt.suptitle("Trajectory errors with 3-sigma bounds")
-plt.tight_layout()
-plt.show()
+    plt.plot(trajectory_error[col])
+    plt.tight_layout()
+    plt.savefig(f'png/2/3{i}.png', dpi=600)
+    plt.show()
+    plt.clf()
 
 """
 Ошибки определения местоположения здесь не представляют большого интереса, 
@@ -164,15 +160,19 @@ plt.show()
 
 plt.plot(result.gyro * pyins.transform.RS_TO_DH, label=['bias_x', 'bias_y', 'bias_z'])
 plt.legend()
-plt.title("Gyro bias estimates, deg/hour")
 plt.xlabel("System time, s")
+plt.tight_layout()
+plt.savefig('png/2/4.png', dpi=600)
 plt.show()
+plt.clf()
 
 plt.plot(result.accel, label=['bias_x', 'bias_y', 'bias_z'])
 plt.legend()
-plt.title("Accel bias estimates, m/s^2")
 plt.xlabel("System time, s")
+plt.tight_layout()
+plt.savefig('png/2/5.png', dpi=600)
 plt.show()
+plt.clf()
 
 """
 Все выглядит разумно. Имеются некоторые ложные изменения оценок, 
