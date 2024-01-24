@@ -28,4 +28,4 @@ osred['alt'] = rsln['alt']
 osred['lat'] = pd.Series(smooth_and_downsample(list(rsln["lat"])))
 osred['lon'] = pd.Series(smooth_and_downsample(list(rsln["lon"])))
 
-osred.to_csv("data/rtsln_filter.csv", index=False)
+osred.to_csv("data/vzlet.csv", index=False)

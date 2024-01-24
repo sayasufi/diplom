@@ -48,11 +48,11 @@ df["VD"] = pd.Series(calculate_smoothed_velocities(list(df["alt"]), 50))
 df.to_csv("data/rtsln_filter_xy.csv", index=False)
 
 # df = pd.read_csv("data/rtsln_filter_xy.csv")
-# df1 = pd.read_csv("data/rtsln_filter.csv")
+# df1 = pd.read_csv("data/vzlet.csv")
 # df1["VN"] = df["VN"]
 # df1["VE"] = df["VE"]
 # df1["VD"] = df["VD"]
-# df1.to_csv("data/rtsln_filter.csv", index=False)
+# df1.to_csv("data/vzlet.csv", index=False)
 
 # df = pd.read_csv("data/imu.csv")
 # df["accel_z"] = df["accel_z"] * -1

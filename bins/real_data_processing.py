@@ -26,9 +26,9 @@ IMU заранее компенсировал значительные откл�
 Все данные синхронизированы с общими часами.
 """
 
-reference_trajectory = pd.read_csv("data/reference_trajectory.csv", index_col='time')
-imu = pd.read_csv("data/imu.csv", index_col='time')
-gnss = pd.read_csv("data/rtsln_filter_ref.csv", index_col='time')
+reference_trajectory = pd.read_csv("data/rodya/vzlet_ref.csv", index_col='time')
+imu = pd.read_csv("data/rodya/vzlet_imu.csv", index_col='time')
+gnss = pd.read_csv("data/rodya/vzlet_sns_150.csv", index_col='time')
 
 
 

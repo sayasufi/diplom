@@ -17,17 +17,17 @@ def local_to_geographic(x, y):
     return lat, lon
 
 
-# gnss = pd.read_csv("data/reference_trajectory.csv")
-# df = pd.read_csv("data/ref_xy.csv")
-# x = [0] * 10 ** 5
-# y = [0] * 10 ** 5
-# df["time"] = gnss["time"]
-# for i in range(10 ** 5):
-#     x[i], y[i] = convert(gnss["lat"][i], gnss["lon"][i])
-#     print(i)
-# df["x"] = pd.Series(x)
-# df["y"] = pd.Series(y)
-# df.to_csv("data/ref_xy.csv", index=False)
+df = pd.read_csv("data/rodya/vzlet_ref.csv")
+rtsln = pd.DataFrame(columns=['time', 'x', 'y'], index=range(10000))
+x = [0] * 10 ** 4
+y = [0] * 10 ** 4
+rtsln["time"] = df["time"]
+for i in range(10 ** 4):
+    x[i], y[i] = geographic_to_local(df["lat"][i], df["lon"][i])
+    print(i)
+rtsln["x"] = pd.Series(x)
+rtsln["y"] = pd.Series(y)
+rtsln.to_csv("data/rodya/vzlet_ref_xy.csv", index=False)
 
 # df = pd.read_csv("data/rtsln_filter_xy.csv")
 # x_coords = df["x"]
