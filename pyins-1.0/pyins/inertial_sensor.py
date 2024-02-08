@@ -21,9 +21,10 @@ Functions
 
     apply_imu_parameters
 """
-import pandas as pd
 import numpy as np
+import pandas as pd
 from scipy._lib._util import check_random_state
+
 from . import util
 from .util import GYRO_COLS, ACCEL_COLS, INDEX_TO_XYZ, XYZ_TO_INDEX
 
@@ -266,6 +267,7 @@ class Parameters:
         containing non-zero parameters of IMU in the format consistent
         with `pyins.filters` results.
     """
+
     def __init__(self, transform=None, bias=None, noise=None, bias_walk=None, rng=None):
         self.transform = self._verify_parameter(transform, 'transform', (3, 3), False,
                                                 np.eye(3))
@@ -335,10 +337,10 @@ class Parameters:
         result = util.mv_prod(self.transform, readings)
         if sensor_type == 'rate':
             result += bias
-            result += self.noise * dt**-0.5 * self.rng.randn(*readings.shape)
+            result += self.noise * dt ** -0.5 * self.rng.randn(*readings.shape)
         elif sensor_type == 'increment':
             result += bias * dt
-            result += self.noise * dt**0.5 * self.rng.randn(*readings.shape)
+            result += self.noise * dt ** 0.5 * self.rng.randn(*readings.shape)
         else:
             raise ValueError("`sensor_type` must be either 'rate' or 'increment ")
 
@@ -352,7 +354,7 @@ class Parameters:
                 actual = self.transform[axis_out, axis_in]
                 if actual != nominal:
                     self.data_frame[(f"sm_{INDEX_TO_XYZ[axis_out]}"
-                                    f"{INDEX_TO_XYZ[axis_in]}")] = actual - nominal
+                                     f"{INDEX_TO_XYZ[axis_in]}")] = actual - nominal
 
         return pd.DataFrame(data=result, index=readings.index, columns=readings.columns)
 

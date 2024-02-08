@@ -23,6 +23,7 @@ References
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
+
 from . import earth, inertial_sensor, kalman, util, transform, strapdown
 from .error_model import InsErrorModel
 from .util import (LLA_COLS, VEL_COLS, RPH_COLS, THETA_COLS, DV_COLS,
@@ -111,7 +112,7 @@ def _compute_error_propagation_matrices(pva, gyro, accel, time_delta,
 
     q = np.hstack((gyro_model.v, accel_model.v, gyro_model.q, accel_model.q))
 
-    return kalman.compute_process_matrices(F, G @ np.diag(q**2) @ G.transpose(),
+    return kalman.compute_process_matrices(F, G @ np.diag(q ** 2) @ G.transpose(),
                                            time_delta)
 
 
@@ -330,7 +331,7 @@ def run_feedback_filter(initial_pva, position_sd, velocity_sd, level_sd, azimuth
         if next_increment_index == increments_index:
             next_increment_index += 1
         increments_batch = _correct_increments(
-            increments.iloc[increments_index : next_increment_index],
+            increments.iloc[increments_index: next_increment_index],
             gyro_model, accel_model)
         increments_index = next_increment_index
 
@@ -349,7 +350,7 @@ def run_feedback_filter(initial_pva, position_sd, velocity_sd, level_sd, azimuth
 
     P_result = np.asarray(P_result)
     trajectory_sd, gyro_sd, accel_sd = _compute_sd(
-        P_result,  integrator.trajectory.loc[times_result],
+        P_result, integrator.trajectory.loc[times_result],
         error_model, gyro_model, accel_model)
 
     for measurement in measurements:
@@ -519,7 +520,7 @@ def run_feedforward_filter(trajectory_nominal, trajectory, position_sd, velocity
             gyro_average = None
             accel_average = None
         else:
-            increments_batch = increments.loc[np.nextafter(time, next_time) : next_time]
+            increments_batch = increments.loc[np.nextafter(time, next_time): next_time]
             gyro_average = increments_batch[THETA_COLS].sum(axis=0) / time_delta
             accel_average = increments_batch[DV_COLS].sum(axis=0) / time_delta
 

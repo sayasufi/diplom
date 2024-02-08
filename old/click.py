@@ -1,11 +1,11 @@
 import math
-import time
 import random
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pylab
+
 from funcs import dist_least, dist2
-import matplotlib.pyplot as plt
-from scipy.stats import gmean
 
 
 def distanse_eq(x, y, x1, y1):
@@ -94,11 +94,11 @@ def raschet(n, x, y, beacon_coordinates):
         for j in range(n):
             dist_with_pogr[k][j] = measured_distances[k][j] + (
                 (
-                    random.uniform(5 / 1000 / 100, 15 / 1000 / 100)
-                    * measured_distances[k][j]
-                    + np.random.normal(
-                        Mean, math.sqrt(Standard_deviation**2 + 0.5**2), 1
-                    )[0]
+                        random.uniform(5 / 1000 / 100, 15 / 1000 / 100)
+                        * measured_distances[k][j]
+                        + np.random.normal(
+                    Mean, math.sqrt(Standard_deviation ** 2 + 0.5 ** 2), 1
+                )[0]
                 )
             )
 
@@ -124,8 +124,8 @@ def raschet(n, x, y, beacon_coordinates):
 
     q1 = ((meanx - min(pogrx)) / 3 + (max(pogrx) - meanx) / 3) / 2
     q2 = ((meany - min(pogry)) / 3 + (max(pogry) - meany) / 3) / 2
-    q = math.sqrt(q1**2 + q2**2)
-    qmean = math.sqrt(meanx**2 + meany**2)
+    q = math.sqrt(q1 ** 2 + q2 ** 2)
+    qmean = math.sqrt(meanx ** 2 + meany ** 2)
 
     """С мат ожиданием без весов"""
 
@@ -144,8 +144,8 @@ def raschet(n, x, y, beacon_coordinates):
 
     q11 = ((meanx1 - min(pogrx1)) / 3 + (max(pogrx1) - meanx1) / 3) / 2
     q21 = ((meany1 - min(pogry1)) / 3 + (max(pogry1) - meany1) / 3) / 2
-    q1 = math.sqrt(q11**2 + q21**2)
-    qmean1 = math.sqrt(meanx1**2 + meany1**2)
+    q1 = math.sqrt(q11 ** 2 + q21 ** 2)
+    qmean1 = math.sqrt(meanx1 ** 2 + meany1 ** 2)
 
     """Без мат ожидания"""
 
@@ -156,7 +156,7 @@ def raschet(n, x, y, beacon_coordinates):
             dist_with_pogr2[k][j] = measured_distances[k][j] + (
                 (
                     np.random.normal(
-                        Mean, math.sqrt(Standard_deviation**2 + 0.5**2), 1
+                        Mean, math.sqrt(Standard_deviation ** 2 + 0.5 ** 2), 1
                     )[0]
                 )
             )
@@ -179,7 +179,7 @@ def raschet(n, x, y, beacon_coordinates):
 
     q12 = ((meanx2 - min(pogrx2)) / 3 + (max(pogrx2) - meanx2) / 3) / 2
     q22 = ((meany2 - min(pogry2)) / 3 + (max(pogry2) - meany2) / 3) / 2
-    q_ = math.sqrt(q12**2 + q22**2)
+    q_ = math.sqrt(q12 ** 2 + q22 ** 2)
 
     pylab.clf()
     pylab.subplot(1, 2, 1)
@@ -196,9 +196,9 @@ def raschet(n, x, y, beacon_coordinates):
     plt.text(
         x,
         y,
-        f"m != 0, Rmax = {round(qmean + q*3, 4)} (с весами)\n"
-        f"m != 0, Rmax = {round(qmean1 + q1*3, 4)} (без весов)\n"
-        f"m = 0, Rmax = {round(q_*3, 4)}",
+        f"m != 0, Rmax = {round(qmean + q * 3, 4)} (с весами)\n"
+        f"m != 0, Rmax = {round(qmean1 + q1 * 3, 4)} (без весов)\n"
+        f"m = 0, Rmax = {round(q_ * 3, 4)}",
         ha="center",
         va="bottom",
         fontsize=20,

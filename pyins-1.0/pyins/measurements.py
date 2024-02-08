@@ -38,6 +38,7 @@ References
 .. [2] P\. S\. Maybeck, "Stochastic Models, Estimation and Control", volume 1
 """
 import numpy as np
+
 from . import transform
 from .util import LLA_COLS, VEL_COLS, RPH_COLS, RATE_COLS
 
@@ -64,6 +65,7 @@ class Measurement:
     NedVelocity
     BodyVelocity
     """
+
     def __init__(self, data):
         self.data = data
 
@@ -116,9 +118,10 @@ class Position(Measurement):
     data : DataFrame
         Data saved from the constructor.
     """
+
     def __init__(self, data, sd, imu_to_antenna_b=None):
         super(Position, self).__init__(data[LLA_COLS])
-        self.R = sd**2 * np.eye(3)
+        self.R = sd ** 2 * np.eye(3)
         self.imu_to_antenna_b = imu_to_antenna_b
 
     def compute_matrices(self, time, pva, error_model):
@@ -157,9 +160,10 @@ class NedVelocity(Measurement):
     data : DataFrame
         Data saved from the constructor.
     """
+
     def __init__(self, data, sd, imu_to_antenna_b=None):
         super(NedVelocity, self).__init__(data[VEL_COLS])
-        self.R = sd**2 * np.eye(3)
+        self.R = sd ** 2 * np.eye(3)
         self.imu_to_antenna_b = imu_to_antenna_b
 
     def compute_matrices(self, time, pva, error_model):
@@ -195,9 +199,10 @@ class BodyVelocity(Measurement):
     data : DataFrame
         Data saved from the constructor.
     """
+
     def __init__(self, data, sd):
         super(BodyVelocity, self).__init__(data[['VX', 'VY', 'VZ']])
-        self.R = sd**2 * np.eye(3)
+        self.R = sd ** 2 * np.eye(3)
 
     def compute_matrices(self, time, pva, error_model):
         if time not in self.data.index:

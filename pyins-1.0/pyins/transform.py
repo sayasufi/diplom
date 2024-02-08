@@ -30,11 +30,12 @@ Functions
 """
 import numpy as np
 import pandas as pd
-from scipy.interpolate import interp1d
 from scipy import signal
+from scipy.interpolate import interp1d
 from scipy.spatial.transform import Rotation, Slerp
-from .util import LLA_COLS, VEL_COLS, RPH_COLS, NED_COLS, TRAJECTORY_COLS
+
 from . import earth, util
+from .util import LLA_COLS, RPH_COLS, NED_COLS
 
 #: Degrees to radians.
 DEG_TO_RAD = np.pi / 180
@@ -231,6 +232,7 @@ def compute_state_difference(first, second):
     DataFrame
         Computed difference.
     """
+
     def to_180_degrees_range(angle):
         angle = angle % 360.0
         if isinstance(angle, (pd.Series, pd.DataFrame)):
@@ -277,7 +279,7 @@ def _apply_smoothing(data, T, T_smooth):
     num_taps = 2 * round(T_smooth / T) + 1
     h = signal.firwin(num_taps, 1 / T_smooth, fs=1 / T)
     filtered = signal.lfilter(h, 1, data, axis=0)
-    filtered = filtered[num_taps - 1 : -num_taps + 1]
+    filtered = filtered[num_taps - 1: -num_taps + 1]
     return filtered, num_taps
 
 
@@ -315,7 +317,7 @@ def smooth_rotations(rotations, dt, smoothing_time):
         raise ValueError("`rotations` must contain multiple rotations.")
     q = rotations.as_quat()
     coefficients = np.einsum('...i,...j->...ij', q, q).reshape(-1, 16)
-    coefficients  = _apply_smoothing(coefficients, dt, smoothing_time)[0].reshape(-1, 4, 4)
+    coefficients = _apply_smoothing(coefficients, dt, smoothing_time)[0].reshape(-1, 4, 4)
     _, v = np.linalg.eigh(coefficients)
     return Rotation.from_quat(v[:, :, -1])
 
@@ -361,7 +363,7 @@ def smooth_state(state, smoothing_time):
     other_columns = state.columns.difference(RPH_COLS)
     smoothed[other_columns], num_taps = _apply_smoothing(
         resampled_state[other_columns].values, dt, smoothing_time)
-    smoothed.index = (resampled_state.index[num_taps - 1 : -num_taps + 1] -
+    smoothed.index = (resampled_state.index[num_taps - 1: -num_taps + 1] -
                       dt * (num_taps // 2))
     return resample_state(smoothed[state.columns], state.index)
 

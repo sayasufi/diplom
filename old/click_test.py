@@ -1,11 +1,11 @@
 import math
 import random
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pylab
-from funcs import calculate_distanse, dist2, dist_least
-import matplotlib.pyplot as plt
-from scipy.stats import gmean
+
+from funcs import dist_least
 
 
 def distanse_eq(x, y, x1, y1):

@@ -15,7 +15,7 @@ def test_kalman_correct():
     H = np.identity(2)
 
     x_true = np.array([1 * 2 / (2 + 3), 2 * 1 / (1 + 2)])
-    P_true = np.diag([1 / (1/2 + 1/3), 1 / (1/1 + 1/2)])
+    P_true = np.diag([1 / (1 / 2 + 1 / 3), 1 / (1 / 1 + 1 / 2)])
 
     x = x0.copy()
     P = P0.copy()

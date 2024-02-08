@@ -1,9 +1,4 @@
-import numpy as np
-import math
-
-import scipy
 from pylab import *
-from scipy.stats import gmean
 from scipy.optimize import least_squares
 
 

@@ -13,7 +13,6 @@ Functions
 """
 import numpy as np
 
-
 LLA_COLS = ['lat', 'lon', 'alt']
 VEL_COLS = ['VN', 'VE', 'VD']
 RPH_COLS = ['roll', 'pitch', 'heading']

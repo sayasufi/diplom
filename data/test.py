@@ -1,6 +1,6 @@
-import pandas as pd
-import math
 import matplotlib.pyplot as plt
+import pandas as pd
+
 
 def change(file):
     # Загрузка данных из csv файла
@@ -10,6 +10,7 @@ def change(file):
 
     # Сохранение измененных данных в csv файл
     df.to_csv('reference_trajectory.csv', index=False)
+
 
 def delete(file):
     # Загрузить файл CSV в DataFrame
@@ -21,8 +22,6 @@ def delete(file):
 
     # Сохранить изменения в файле CSV
     df.to_csv(file, index=False)
-
-
 
 
 # Загрузка данных из файла CSV
@@ -38,4 +37,3 @@ plt.xlabel('Название оси X')
 plt.ylabel('Название оси Y')
 plt.title('Название графика')
 plt.show()
-

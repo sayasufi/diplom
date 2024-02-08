@@ -3,7 +3,8 @@
 
 # pyins
 
-pyins is a Python package which provides common basic algorithms used in Inertial Navigation Systems (INS) aided by external sensors like GNSS.
+pyins is a Python package which provides common basic algorithms used in Inertial Navigation Systems (INS) aided by
+external sensors like GNSS.
 
 Version 1.0 has refined and improved functionality, consistent docstrings and extended examples.
 Refer to [version_1.0.md](./version_1.0.md) for the list of main changes compared to earlier versions.
@@ -12,11 +13,14 @@ Refer to [version_1.0.md](./version_1.0.md) for the list of main changes compare
 
 The package now is pure Python and thus can be easily installed on any platform.
 
-To install execute in the package directory: 
+To install execute in the package directory:
+
 ```shell
 pip install .
 ```
+
 To perform editable (inplace) install:
+
 ```shell
 pip install -e .
 ```
@@ -32,12 +36,15 @@ Runtime dependencies include (versions in parentheses were used for the latest d
 
 ## Running tests
 
-To run all the supplied tests with `pytest` execute: 
+To run all the supplied tests with `pytest` execute:
+
 ```shell
 pytest pyins
 ```
-Due to some `pytest` limitations it won't work for editable installation. 
+
+Due to some `pytest` limitations it won't work for editable installation.
 In this case supply path to `tests` directory:
+
 ```shell
 pytest /your_dev_dir/pyins/pyins/tests
 ```

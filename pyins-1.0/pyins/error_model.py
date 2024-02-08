@@ -25,6 +25,7 @@ Functions
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
+
 from . import earth, util, transform
 from .util import (LLA_COLS, VEL_COLS, RPH_COLS, RATE_COLS, NED_COLS,
                    TRAJECTORY_ERROR_COLS)
@@ -77,6 +78,7 @@ class InsErrorModel:
     .. [1] Bruno M. Scherzinger and D.Blake Reid "Modified Strapdown Inertial
            Navigator Error Models"
     """
+
     def __init__(self, with_altitude=True):
         self.with_altitude = with_altitude
         if with_altitude:

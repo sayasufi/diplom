@@ -1,10 +1,11 @@
 import math
-from pylab import *
-from random import randrange
-from funcs import calculate_azimut, calculate_distanse
-import matplotlib.pyplot as plt
-from scipy.stats import gmean
 import time
+from random import randrange
+
+from pylab import *
+from scipy.stats import gmean
+
+from funcs import calculate_azimut, calculate_distanse
 
 
 def distanse_eq(x, y, x1, y1):
@@ -26,13 +27,12 @@ def beacons(n):
 
 
 def polet(n, seconds_polet, beacon_coordinates):
-
     time_start = time.perf_counter()
     x = [0 for _ in range(seconds_polet)]
     y = [0 for _ in range(seconds_polet)]
     for i in range(0, seconds_polet):
-        x[i] = 7000 * cos(i/180*pi/seconds_polet*360)
-        y[i] = 7000 * sin(i/180*pi/seconds_polet*360)
+        x[i] = 7000 * cos(i / 180 * pi / seconds_polet * 360)
+        y[i] = 7000 * sin(i / 180 * pi / seconds_polet * 360)
 
     measured_distances = [[0 for _ in range(n)] for _ in range(seconds_polet)]
     azimuth_angles = [[0 for _ in range(n)] for _ in range(seconds_polet)]

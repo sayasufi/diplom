@@ -25,9 +25,10 @@ Classes
 """
 import numpy as np
 import pandas as pd
+from scipy._lib._util import check_random_state
 from scipy.interpolate import CubicSpline, CubicHermiteSpline
 from scipy.spatial.transform import Rotation, RotationSpline
-from scipy._lib._util import check_random_state
+
 from . import earth, transform, util
 from .util import (LLA_COLS, VEL_COLS, RPH_COLS, NED_COLS, GYRO_COLS, ACCEL_COLS,
                    TRAJECTORY_COLS, TRAJECTORY_ERROR_COLS)

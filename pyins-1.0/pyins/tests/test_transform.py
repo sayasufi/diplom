@@ -1,6 +1,5 @@
 import numpy as np
 from numpy.testing import assert_allclose
-from scipy.spatial.transform import Rotation
 from pyins import earth, transform
 
 

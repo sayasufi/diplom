@@ -1,9 +1,9 @@
+import numpy as np
 import pandas as pd
 from numpy.testing import assert_allclose
-import numpy as np
 from pyins import sim
-from pyins.transform import compute_state_difference
 from pyins.strapdown import compute_increments_from_imu, Integrator
+from pyins.transform import compute_state_difference
 from pyins.util import GYRO_COLS, ACCEL_COLS, THETA_COLS, DV_COLS
 
 
@@ -69,7 +69,7 @@ def test_integrate_constant_velocity():
     velocity_n = [5.0, -3.0, 0.2]
 
     thresholds = pd.Series({
-        'north': 1, 'east':1, 'down': 1,
+        'north': 1, 'east': 1, 'down': 1,
         'VN': 1e-3, 'VE': 1e-3, 'VD': 1e-3,
         'roll': 1e-4, 'pitch': 1e-4, 'heading': 1e-4
     })

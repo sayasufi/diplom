@@ -7,13 +7,13 @@ name = "pyins"
 description = "Inertial Navigation System algorithms in Python"
 version = "1.0"
 maintainers = [
-    {name = "Nikolay Mayorov", email = "nikolay.mayorov@zoho.com"},
+    { name = "Nikolay Mayorov", email = "nikolay.mayorov@zoho.com" },
 ]
 keywords = ["Navigation", "INS", "Inertial navigation", "Kalman filters"]
-license = {file="LICENSE.txt"}
+license = { file = "LICENSE.txt" }
 readme = "README.md"
 dependencies = ["numpy", "numba", "scipy", "pandas"]
-classifiers=[
+classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",

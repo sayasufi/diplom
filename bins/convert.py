@@ -1,8 +1,6 @@
-import pandas as pd
-import pyproj
-from math import sin, cos, tan, pi
-import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+
 
 def geographic_to_local(lat, lon):
     x = lon * 20037508.34 / 180
@@ -10,12 +8,15 @@ def geographic_to_local(lat, lon):
     y = y * 20037508.34 / 180
     return x, y
 
+
 def local_to_geographic(x, y):
     lon = (x / 20037508.34) * 180
     lat = (y / 20037508.34) * 180
     lat = 180 / np.pi * (2 * np.arctan(np.exp(lat * np.pi / 180)) - np.pi / 2)
     return lat, lon
 
+
+print(geographic_to_local(55.08702067774778, 38.1481475549193))
 
 df = pd.read_csv("data/rodya/vzlet_ref.csv")
 rtsln = pd.DataFrame(columns=['time', 'x', 'y'], index=range(10000))

@@ -1,5 +1,3 @@
-import random
-
 from convert import *
 
 # ref = pd.read_csv('data/rodya/vzlet_sns.csv')
@@ -13,8 +11,6 @@ df = pd.read_csv('data/distances.csv')
 df_subset = df.iloc[10600:20600]
 
 # df_subset.to_csv('data/perekl/perekl_imu.csv', index=False)
-
-
 
 
 #

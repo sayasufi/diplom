@@ -1,5 +1,6 @@
 import numba
 import numpy as np
+
 from . import earth, transform
 
 
@@ -117,4 +118,3 @@ def integrate(dt_array, lla, velocity_n, mat_nb, theta, dv, offset, with_altitud
         mat_from_rotvec(theta[i], dBb)
         np.dot(mat_nb[j], dBb, C)
         np.dot(dBn, C, mat_nb[j + 1])
-

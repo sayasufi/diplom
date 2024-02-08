@@ -79,7 +79,6 @@ for i in range(n_izm):
     )
     logging.info(f"[{i} / {n_izm}]")
 
-
 rtsln.to_csv("data/rtsln.csv", index=False)
 distan.to_csv("data/distances.csv", index=False)
 rtsln_xy.to_csv("data/rtsln_xy.csv", index=False)

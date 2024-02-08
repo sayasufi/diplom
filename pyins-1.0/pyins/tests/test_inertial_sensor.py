@@ -36,7 +36,7 @@ def test_EstimationModel():
     assert_equal(s.n_noises, 1)
     assert_equal(s.n_output_noises, 1)
     assert_equal(s.states, ['bias_x', 'bias_z'])
-    assert_allclose(s.P, np.diag([0.1**2, 0.2**2]))
+    assert_allclose(s.P, np.diag([0.1 ** 2, 0.2 ** 2]))
     assert_equal(s.q, [0.01])
     assert_equal(s.v, [0.02])
     assert_equal(s.F, np.zeros((2, 2)))
@@ -104,8 +104,8 @@ def test_Parameters():
 def test_Parameters_from_EstimationModel():
     model = EstimationModel(bias_sd=[0.0, 1.0, 1.0],
                             scale_misal_sd=[[0.01, 0.0, 0.0],
-                                                [0.0, 0.0, 0.01],
-                                                [0.0, 0.01, 0.0]])
+                                            [0.0, 0.0, 0.01],
+                                            [0.0, 0.01, 0.0]])
     imu_errors = Parameters.from_EstimationModel(model, 0)
     assert imu_errors.bias[0] == 0
     assert imu_errors.bias[1] != 0

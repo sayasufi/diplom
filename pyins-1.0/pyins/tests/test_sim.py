@@ -1,9 +1,7 @@
 import numpy as np
-import pandas as pd
 from numpy.testing import assert_allclose
-from pyins import sim
 from pyins import earth
-from pyins.inertial_sensor import EstimationModel
+from pyins import sim
 from pyins.util import GYRO_COLS, ACCEL_COLS
 
 
@@ -21,7 +19,7 @@ def test_sim_on_stationary():
     V_n = np.zeros((n_points, 3))
 
     slat = np.sin(np.deg2rad(50))
-    clat = (1 - slat**2) ** 0.5
+    clat = (1 - slat ** 2) ** 0.5
 
     gyro = earth.RATE * np.array([clat, 0, -slat])
     accel = np.array([0, 0, -earth.gravity(50, 0)])

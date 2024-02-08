@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 from scipy.signal import savgol_filter
 
 
@@ -13,11 +12,9 @@ def smooth_and_downsample(data):
     return smoothed_data
 
 
-
 rsln = pd.read_csv('/home/semyon/PycharmProjects/diplom/bins/data/rtsln.csv')
 index = range(100000)
 osred = pd.DataFrame(columns=['time', 'lat', 'lon', 'alt'], index=index)
-
 
 # for i in range(10 ** 4):
 #     osred['time'][i] = rsln['time'][i * 10 + 5]

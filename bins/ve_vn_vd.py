@@ -1,5 +1,3 @@
-import pandas as pd
-import numpy as np
 from scipy.signal import savgol_filter
 
 from convert import *
@@ -30,8 +28,8 @@ def calculate_smoothed_velocities(data, frequency):
 
     # Вычисляем скорости, разделив разницу на время
     velocities = [0] * len(data)
-    for i in range(len(differences)-10):
-        velocities[i+5] = sum(differences[i:i+5]) / 2
+    for i in range(len(differences) - 10):
+        velocities[i + 5] = sum(differences[i:i + 5]) / 2
 
     # Применяем фильтр скользящего среднего для сглаживания скоростей
     smoothed_velocities = np.convolve(velocities, np.ones(30) / 30, mode="same")

@@ -1,8 +1,5 @@
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import pyins
 import folium
+import pandas as pd
 
 gnss = pd.read_csv("/home/semyon/PycharmProjects/diplom/bins/data/beacons.csv")
 lat = gnss['lat']

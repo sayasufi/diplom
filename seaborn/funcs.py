@@ -1,4 +1,3 @@
-
 from pylab import *
 
 from scipy.optimize import least_squares
@@ -6,6 +5,7 @@ from scipy.optimize import least_squares
 
 def dist2(beacon_coords, distances):
     """Без весов"""
+
     def residuals(point):
         return np.linalg.norm(np.sqrt(np.sum((beacon_coords - point) ** 2, axis=1)) - distances)
 

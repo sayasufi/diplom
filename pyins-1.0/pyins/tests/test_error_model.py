@@ -1,12 +1,12 @@
 import numpy as np
 import pandas as pd
 from numpy.testing import assert_allclose
-from scipy.spatial.transform import Rotation
-from pyins import earth, error_model, sim, transform
+from pyins import error_model, sim, transform
 from pyins.strapdown import compute_increments_from_imu, Integrator
 from pyins.transform import compute_state_difference
 from pyins.util import (VEL_COLS, RPH_COLS, NED_COLS, GYRO_COLS, ACCEL_COLS,
                         TRAJECTORY_ERROR_COLS)
+from scipy.spatial.transform import Rotation
 
 
 def test_phi_to_delta_rph():

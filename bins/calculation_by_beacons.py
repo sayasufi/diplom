@@ -1,7 +1,5 @@
 import logging
 
-import pandas as pd
-
 from click import raschet
 from convert import *
 

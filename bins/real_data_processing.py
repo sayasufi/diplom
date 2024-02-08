@@ -2,9 +2,9 @@
 Обработка реальных данных
 """
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import pyins
 
 plt.rcParams['figure.figsize'] = (10, 6)
@@ -29,8 +29,6 @@ IMU заранее компенсировал значительные откл�
 reference_trajectory = pd.read_csv("data/rodya/vzlet_ref.csv", index_col='time')
 imu = pd.read_csv("data/rodya/vzlet_imu.csv", index_col='time')
 gnss = pd.read_csv("data/rodya/vzlet_sns_150.csv", index_col='time')
-
-
 
 """
 Мы выбираем приблизительно подходящие параметры для определения 
