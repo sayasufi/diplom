@@ -14,13 +14,13 @@ def rachet(df, xy, num):
         (138.984000000000, -92.6810000000000, 0),
         (78.1890000000000, -139.061000000000, 0),
         (-24.4290000000000, -31.2520000000000, 0),
-        (-49.9940000000000, 63.2610000000000, 0),
         (0, 0, 0),
+        (-49.9940000000000, 63.2610000000000, 0),
         (20.3570000000000, -96.5530000000000, 0),
         (0, 0, 0),
     )
 
-    count = 1000
+    count = 10000
     dist_with_pogr = [0] * count
     for i in range(count):
         dist_with_pogr[i] = [df["1"][i]]
@@ -36,6 +36,7 @@ def rachet(df, xy, num):
 
     x_dist = [0] * count
     y_dist = [0] * count
+    temp = None
     for k in range(count):
         dist_with_pogr_in = []
         beacon_in = []
@@ -44,19 +45,19 @@ def rachet(df, xy, num):
                 dist_with_pogr_in.append(dist_with_pogr[k][i])
                 beacon_in.append(beacon_coordinates[i])
 
-        x_dist[k], y_dist[k], _ = dist_least(
-            beacon_in, dist_with_pogr_in, 0, 0, 0
-        )
+        if len(beacon_in) > 3:
+
+            x_dist[k], y_dist[k], _ = dist_least(
+                beacon_in, dist_with_pogr_in, 0, 0, 0
+            )
+        else:
+            if temp:
+                x_dist[k - 1], y_dist[k - 1] = temp
+            else:
+                temp = x_dist[k - 1], y_dist[k - 1]
         print(f'{k} / {count}')
+    print(x_dist[0], y_dist[0])
     plt.style.use("ggplot")
-    plt.plot(df['time'][:count], x_dist, label='x')
-    plt.plot(df['time'][:count], y_dist, label='y')
-    # plt.plot(df['time'], df['4'] - np.mean(df['4']), label='РЭМ-4')
-    plt.legend()
-    plt.xlabel('Время, с')
-    plt.ylabel('Координаты обьекта, м')
-    plt.savefig(f'{num}/png/3.png', dpi=600)
-    plt.show()
 
     e = np.mean(xy["E"])
     n = np.mean(xy["N"])
@@ -70,7 +71,7 @@ def rachet(df, xy, num):
     plt.legend()
     plt.xlabel('Время, с')
     plt.ylabel('СКО по координатам, м')
-    plt.savefig(f'{num}/png/4.png', dpi=600)
+    plt.savefig(f'{num}/png/3.png', dpi=600)
     plt.show()
     print(f"Ошибка МО по координатам: {math.sqrt((np.mean(x_dist) - e) ** 2 + (np.mean(y_dist) - n) ** 2)} м")
 
@@ -86,7 +87,7 @@ def rachet(df, xy, num):
     plt.legend()
     plt.xlabel('Время, с')
     plt.ylabel('СКО по скоростям, м/с')
-    plt.savefig(f'{num}/png/5.png', dpi=600)
+    plt.savefig(f'{num}/png/4.png', dpi=600)
     plt.show()
     print(f"Ошибка МО по скоростям: {math.sqrt((np.mean(vx) - VE) ** 2 + (np.mean(vy) - VN) ** 2)} м/с")
 
@@ -99,7 +100,7 @@ def rachet(df, xy, num):
     pylab.hist(y_dist - n, bins=20, histtype='step', label=('Y',))
     pylab.legend(loc=2)
     plt.xlabel(f'СКО = {round(np.std(y_dist), 2)}; МО по Y = {round(np.mean(y_dist) - n, 2)}')
-    plt.savefig(f'{num}/png/6.png', dpi=600)
+    plt.savefig(f'{num}/png/5.png', dpi=600)
     pylab.show()
 
 
@@ -114,18 +115,16 @@ def dist_sko(df, num):
     for i in range(1, 9):
         if df[str(i)][1000] > 0.1:
             mean = np.mean(df[str(i)])
-            a = pd.DataFrame(df[str(i)][10000:11000])
-            a = a.drop(a[a[str(i)] > mean + 50].index)
+            a = pd.DataFrame(df[str(i)])
+            a = a.drop(a[a[str(i)] > mean + 50].index)[:10000]
             # print(a[str(i)])
             # print(df['time'][:1000])
 
-
-            axs[valid].plot(df['time'][:1000], a[str(i)] - np.mean(a[str(i)]))
+            axs[valid].plot(df['time'][:10000], a[str(i)] - np.mean(a[str(i)]))
             axs[valid].set_title(f'РЭМ-{i}')
             axs[valid].set_xlabel('Время, с')
             axs[valid].set_ylabel('СКО, м')
             valid += 1
-
 
     # Установка расстояния между подграфиками
     plt.subplots_adjust(hspace=1)
@@ -141,9 +140,9 @@ def dist(df, num):
     for i in range(1, 9):
         if df[str(i)][1000] > 0.1:
             mean = np.mean(df[str(i)])
-            a = pd.DataFrame(df[str(i)][10000:11000])
-            a = a.drop(a[a[str(i)] > mean + 50].index)
-            plt.plot(df['time'][:1000], a, label=f'РЭМ-{i}')
+            a = pd.DataFrame(df[str(i)])
+            a = a.drop(a[a[str(i)] > mean + 50].index)[:10000]
+            plt.plot(df['time'][:10000], a, label=f'РЭМ-{i}')
 
     # Добавляем легенду
     plt.legend()
@@ -158,7 +157,7 @@ def dist(df, num):
 
 
 if __name__ == '__main__':
-    for i in range(7, 8):
+    for i in range(1, 9):
         df = pd.read_csv(f"{i}/im_dist.csv")
         xy = pd.read_csv(f"{i}/xyz_v.csv")
         dist(df, i)
