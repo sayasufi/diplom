@@ -8,7 +8,7 @@ import pylab
 from zhenek.funcs import dist_least
 
 
-def rachet(df, xy, num):
+def rachet(df, xy, gnss, rtsln, num):
     beacon_coordinates = (
         (52.1570000000000, 21.9930000000000, 0),
         (138.984000000000, -92.6810000000000, 0),
@@ -62,34 +62,17 @@ def rachet(df, xy, num):
     e = np.mean(xy["E"])
     n = np.mean(xy["N"])
     h = np.mean(xy["h"])
-    VE = np.mean(xy["VE"])
-    VN = np.mean(xy["VN"])
 
-    plt.plot(df['time'][:count], x_dist - np.mean(x_dist), label='x')
-    plt.plot(df['time'][:count], y_dist - np.mean(y_dist), label='y')
+    plt.plot(df['time'][:count], x_dist - e, label='x')
+    plt.plot(df['time'][:count], y_dist - n, label='y')
     # plt.plot(df['time'], df['4'] - np.mean(df['4']), label='РЭМ-4')
     plt.legend()
     plt.xlabel('Время, с')
     plt.ylabel('СКО по координатам, м')
     plt.savefig(f'{num}/png/3.png', dpi=600)
     plt.show()
-    print(f"Ошибка МО по координатам: {math.sqrt((np.mean(x_dist) - e) ** 2 + (np.mean(y_dist) - n) ** 2)} м")
+    # print(f"Ошибка МО по координатам: {math.sqrt((np.mean(x_dist) - e) ** 2 + (np.mean(y_dist) - n) ** 2)} м")
 
-    vx = [0] * count
-    vy = [0] * count
-    for i in range(count - 1):
-        vx[i] = x_dist[i + 1] - x_dist[i]
-        vy[i] = y_dist[i + 1] - y_dist[i]
-
-    plt.plot(df['time'][:count], vx - np.mean(vx), label='x')
-    plt.plot(df['time'][:count], vy - np.mean(vy), label='y')
-    # plt.plot(df['time'], df['4'] - np.mean(df['4']), label='РЭМ-4')
-    plt.legend()
-    plt.xlabel('Время, с')
-    plt.ylabel('СКО по скоростям, м/с')
-    plt.savefig(f'{num}/png/4.png', dpi=600)
-    plt.show()
-    print(f"Ошибка МО по скоростям: {math.sqrt((np.mean(vx) - VE) ** 2 + (np.mean(vy) - VN) ** 2)} м/с")
 
     pylab.subplot(1, 2, 1)
     pylab.hist(x_dist - e, bins=20, histtype='step', label=('X',))
@@ -100,7 +83,34 @@ def rachet(df, xy, num):
     pylab.hist(y_dist - n, bins=20, histtype='step', label=('Y',))
     pylab.legend(loc=2)
     plt.xlabel(f'СКО = {round(np.std(y_dist), 2)}; МО по Y = {round(np.mean(y_dist) - n, 2)}')
+    plt.suptitle("Алгоритм Python")
+    plt.savefig(f'{num}/png/4.png', dpi=600)
+    pylab.show()
+
+    pylab.subplot(1, 2, 1)
+    pylab.hist(rtsln["E"] - e, bins=20, histtype='step', label=('X',))
+    pylab.legend(loc=2)
+    plt.xlabel(f'СКО = {round(np.std(rtsln["E"]), 2)}; МО по X = {round(np.mean(rtsln["E"]) - e, 2)}')
+
+    pylab.subplot(1, 2, 2)
+    pylab.hist(rtsln["N"] - n, bins=20, histtype='step', label=('Y',))
+    pylab.legend(loc=2)
+    plt.xlabel(f'СКО = {round(np.std(rtsln["N"]), 2)}; МО по Y = {round(np.mean(rtsln["N"]) - n, 2)}')
+    plt.suptitle("Алгоритм С")
     plt.savefig(f'{num}/png/5.png', dpi=600)
+    pylab.show()
+
+    pylab.subplot(1, 2, 1)
+    pylab.hist(gnss["E"] - e, bins=20, histtype='step', label=('X',))
+    pylab.legend(loc=2)
+    plt.xlabel(f'СКО = {round(np.std(gnss["E"]), 2)}; МО по X = {round(np.mean(gnss["E"]) - e, 2)}')
+
+    pylab.subplot(1, 2, 2)
+    pylab.hist(gnss["N"] - n, bins=20, histtype='step', label=('Y',))
+    pylab.legend(loc=2)
+    plt.xlabel(f'СКО = {round(np.std(gnss["N"]), 2)}; МО по Y = {round(np.mean(gnss["N"]) - n, 2)}')
+    plt.suptitle("Спутник")
+    plt.savefig(f'{num}/png/6.png', dpi=600)
     pylab.show()
 
 
@@ -108,22 +118,23 @@ def dist_sko(df, num):
     plt.style.use("ggplot")
     valid = 0
     for i in range(1, 9):
-        if df[str(i)][1000] > 0.1:
+        if df[str(i)][1000] > 50:
             valid += 1
     fig, axs = plt.subplots(valid, 1, figsize=(8, 10))
     valid = 0
     for i in range(1, 9):
-        if df[str(i)][1000] > 0.1:
+        if df[str(i)][1000] > 50:
             mean = np.mean(df[str(i)])
             a = pd.DataFrame(df[str(i)])
-            a = a.drop(a[a[str(i)] > mean + 50].index)[:10000]
+            # a = a.drop(a[a[str(i)] > mean + 50].index)[:10000]
             # print(a[str(i)])
             # print(df['time'][:1000])
 
-            axs[valid].plot(df['time'][:10000], a[str(i)] - np.mean(a[str(i)]))
+            axs[valid].plot(df['time'][:10000], a[str(i)][:10000] - np.mean(a[str(i)][:10000]))
             axs[valid].set_title(f'РЭМ-{i}')
             axs[valid].set_xlabel('Время, с')
             axs[valid].set_ylabel('СКО, м')
+            # axs[valid].set_ylim(-0.2, 0.2)
             valid += 1
 
     # Установка расстояния между подграфиками
@@ -138,11 +149,11 @@ def dist(df, num):
     plt.style.use("ggplot")
     # Строим графики
     for i in range(1, 9):
-        if df[str(i)][1000] > 0.1:
+        if df[str(i)][1000] > 50:
             mean = np.mean(df[str(i)])
             a = pd.DataFrame(df[str(i)])
-            a = a.drop(a[a[str(i)] > mean + 50].index)[:10000]
-            plt.plot(df['time'][:10000], a, label=f'РЭМ-{i}')
+            # a = a.drop(a[a[str(i)] > mean + 50].index)[:10000]
+            plt.plot(df['time'][:10000], a[:10000], label=f'РЭМ-{i}')
 
     # Добавляем легенду
     plt.legend()
@@ -157,9 +168,11 @@ def dist(df, num):
 
 
 if __name__ == '__main__':
-    for i in range(1, 9):
+    for i in (3, 4, 5, 7):
         df = pd.read_csv(f"{i}/im_dist.csv")
-        xy = pd.read_csv(f"{i}/xyz_v.csv")
+        xyz = pd.read_csv(f"{i}/xyz.csv")
+        gnss = pd.read_csv(f"{i}/gnss.csv")
+        rtsln = pd.read_csv(f"{i}/rtsln.csv")
         dist(df, i)
         dist_sko(df, i)
-        rachet(df, xy, i)
+        rachet(df, xyz, gnss, rtsln, i)
