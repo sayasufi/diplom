@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import pandas as pd
 
@@ -39,27 +41,30 @@ def remove_rows2(df):
     return df
 
 
-for i in range(1, 9):
-    df = pd.read_csv(f"{i}/rtsln.csv")
-    df_filter = remove_rows2(df)
-    df_filter.to_csv(f"{i}/rtsln.csv", index=False)
-
 # for i in range(1, 9):
-#     df = pd.read_csv(f"{i}/xyz_v.csv")
+#     df = pd.read_csv(f"{i}/rtsln.csv")
+#     df_filter = remove_rows2(df)
+#     df_filter.to_csv(f"{i}/rtsln.csv", index=False)
 
-    # print(i)
-    # # Функция для генерации случайного значения и прибавления его к текущему значению
-    # def generate_random_value():
-    #     random_value = np.random.uniform(-1, 1) / 100  # Генерация случайного значения от 1 до 70
-    #     return random_value
-    #
-    #
-    # # Проход по каждой ячейке и добавление случайного значения
-    # for column in df.columns:
-    #     if column != 'time':
-    #         for index, value in df[column].items():
-    #             if value >= 5:
-    #                 df.at[index, column] += generate_random_value()
+for i in range(1, 9):
+    df = pd.read_csv(f"{i}/im_dist.csv")
 
-    # Вывод измененной таблицы
-    # df.to_csv(f"{i}/im_dist.csv", index=False)
+    print(i)
+    # Функция для генерации случайного значения и прибавления его к текущему значению
+    def generate_random_value():
+        s = random.randint(2, 50)
+        random_value = np.random.uniform(-1, 1) / s # Генерация случайного значения от 1 до 70
+        return random_value
+
+    ztime = df["time"][0]
+    # Проход по каждой ячейке и добавление случайного значения
+    for column in df.columns:
+        # if column != 'time':
+        #     for index, value in df[column].items():
+        #         if value >= 5:
+        #             df.at[index, column] += generate_random_value()
+        if column == 'time':
+            for index, value in df[column].items():
+                df.at[index, column] -= ztime
+
+    df.to_csv(f"{i}/im_dist.csv", index=False)
