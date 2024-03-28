@@ -64,41 +64,71 @@ def rachet(df, xy, gnss, rtsln, num):
     h = np.mean(xy["h"])
 
     pylab.subplot(1, 2, 1)
-    pylab.hist(x_dist - e, bins=100, histtype='step', label=('X',))
+    pylab.hist(x_dist - e, bins=100, histtype='step', label=('X',), linewidth=1.2)
     pylab.legend(loc=2)
     plt.xlabel(f'СКО = {round(np.std(x_dist), 2)}; МО по X = {round(np.mean(x_dist) - e, 2)}')
+    for spine in plt.gca().spines.values():
+        spine.set_color('black')
+        spine.set_linewidth(1.5)
+    plt.grid(color='gray', alpha=0.7, linestyle='--')
+    plt.gca().set_facecolor('white')
 
     pylab.subplot(1, 2, 2)
-    pylab.hist(y_dist - n, bins=100, histtype='step', label=('Y',))
+    pylab.hist(y_dist - n, bins=100, histtype='step', label=('Y',), linewidth=1.2)
     pylab.legend(loc=2)
     plt.xlabel(f'СКО = {round(np.std(y_dist), 2)}; МО по Y = {round(np.mean(y_dist) - n, 2)}')
     plt.suptitle("Алгоритм Python")
+    for spine in plt.gca().spines.values():
+        spine.set_color('black')
+        spine.set_linewidth(1.5)
+    plt.grid(color='gray', alpha=0.7, linestyle='--')
+    plt.gca().set_facecolor('white')
     plt.savefig(f'{num}/png/4.png', dpi=600)
     pylab.show()
 
     pylab.subplot(1, 2, 1)
-    pylab.hist(rtsln["E"] - e, bins=100, histtype='step', label=('X',))
+    pylab.hist(rtsln["E"] - e, bins=100, histtype='step', label=('X',), linewidth=1.2)
     pylab.legend(loc=2)
     plt.xlabel(f'СКО = {round(np.std(rtsln["E"]), 2)}; МО по X = {round(np.mean(rtsln["E"]) - e, 2)}')
+    for spine in plt.gca().spines.values():
+        spine.set_color('black')
+        spine.set_linewidth(1.5)
+    plt.grid(color='gray', alpha=0.7, linestyle='--')
+    plt.gca().set_facecolor('white')
 
     pylab.subplot(1, 2, 2)
-    pylab.hist(rtsln["N"] - n, bins=100, histtype='step', label=('Y',))
+    pylab.hist(rtsln["N"] - n, bins=100, histtype='step', label=('Y',), linewidth=1.2)
     pylab.legend(loc=2)
     plt.xlabel(f'СКО = {round(np.std(rtsln["N"]), 2)}; МО по Y = {round(np.mean(rtsln["N"]) - n, 2)}')
     plt.suptitle("Алгоритм С")
+    for spine in plt.gca().spines.values():
+        spine.set_color('black')
+        spine.set_linewidth(1.5)
+    plt.grid(color='gray', alpha=0.7, linestyle='--')
+    plt.gca().set_facecolor('white')
     plt.savefig(f'{num}/png/5.png', dpi=600)
     pylab.show()
 
     pylab.subplot(1, 2, 1)
-    pylab.hist(gnss["E"] - e, bins=100, histtype='step', label=('X',))
+    pylab.hist(gnss["E"] - e, bins=100, histtype='step', label=('X',), linewidth=1.2)
     pylab.legend(loc=2)
     plt.xlabel(f'СКО = {round(np.std(gnss["E"]), 2)}; МО по X = {round(np.mean(gnss["E"]) - e, 2)}')
+    for spine in plt.gca().spines.values():
+        spine.set_color('black')
+        spine.set_linewidth(1.5)
+    plt.grid(color='gray', alpha=0.7, linestyle='--')
+    plt.gca().set_facecolor('white')
 
     pylab.subplot(1, 2, 2)
-    pylab.hist(gnss["N"] - n, bins=100, histtype='step', label=('Y',))
+    pylab.hist(gnss["N"] - n, bins=100, histtype='step', label=('Y',), linewidth=1.2)
     pylab.legend(loc=2)
     plt.xlabel(f'СКО = {round(np.std(gnss["N"]), 2)}; МО по Y = {round(np.mean(gnss["N"]) - n, 2)}')
     plt.suptitle("Спутник")
+    for spine in plt.gca().spines.values():
+        spine.set_color('black')
+        spine.set_linewidth(1.5)
+    plt.grid(color='gray', alpha=0.7, linestyle='--')
+    plt.gca().set_facecolor('white')
     plt.savefig(f'{num}/png/6.png', dpi=600)
     pylab.show()
 
@@ -112,32 +142,69 @@ def rachet(df, xy, gnss, rtsln, num):
         (np.mean(rtsln["E"]), np.mean(rtsln["N"]))
     ]
     labels = ['Ref', 'Python', 'GNSS', 'C']
+    colors = ["red", "blue", "green", "purple"]
     plt.figure()
 
     for i, point in enumerate(points):
-        plt.scatter(point[0], point[1], label=labels[i])
+        plt.scatter(point[0], point[1], label=labels[i], c=colors[i])
         plt.text(point[0], point[1], labels[i], fontsize=12, ha='right')
 
     # Создаем окружности
-    circle1 = plt.Circle(points[0], disss(points[0], points[1]), color='blue', fill=False)
-    circle2 = plt.Circle(points[0], disss(points[0], points[2]), color='gray', fill=False)
-    circle3 = plt.Circle(points[0], disss(points[0], points[3]), color='purple', fill=False)
+    circle1 = plt.Circle(points[0], disss(points[0], points[1]), color='blue', fill=False, linewidth=2)
+    circle2 = plt.Circle(points[0], disss(points[0], points[2]), color='green', fill=False, linewidth=2)
+    circle3 = plt.Circle(points[0], disss(points[0], points[3]), color='purple', fill=False, linewidth=2)
 
     # Добавляем окружности на график
     plt.gca().add_artist(circle1)
     plt.gca().add_artist(circle2)
     plt.gca().add_artist(circle3)
 
+
     plt.xlabel('X')
     plt.ylabel('Y')
     plt.title('Точки на координатной плоскости')
-    plt.xlim(points[0][0]-3, points[0][0]+3)
-    plt.ylim(points[0][1]-3, points[0][1]+3)
+    plt.xlim(points[0][0] - 3, points[0][0] + 3)
+    plt.ylim(points[0][1] - 3, points[0][1] + 3)
+    plt.xlabel('X, м')
+    plt.ylabel('Y, м')
+    plt.gca().set_aspect('equal', adjustable='box')
+    for spine in plt.gca().spines.values():
+        spine.set_color('black')
+        spine.set_linewidth(1.5)
+    plt.grid(color='gray', alpha=0.7, linestyle='--')
+    plt.gca().set_facecolor('white')
+
+    plt.text(plt.xlim()[1],
+             plt.ylim()[1]-0.2,
+             f'Python - {round(disss(points[0], points[1]), 2)} м.',
+             fontsize=12,
+             ha='right',
+             va='top',
+             color='blue')
+
+    plt.text(plt.xlim()[1],
+             plt.ylim()[1] - 0.6,
+             f'GNSS - {round(disss(points[0], points[2]), 2)} м.',
+             fontsize=12,
+             ha='right',
+             va='top',
+             color='green')
+
+    plt.text(plt.xlim()[1],
+             plt.ylim()[1] - 1,
+             f'C - {round(disss(points[0], points[3]), 2)} м.',
+             fontsize=12,
+             ha='right',
+             va='top',
+             color='purple')
+
+    plt.savefig(f'{num}/png/7.png', dpi=600)
     plt.show()
 
 
 def dist_sko(df, num):
     plt.style.use("ggplot")
+
     valid = 0
     for i in range(1, 9):
         if df[str(i)][1000] > 50:
@@ -152,14 +219,19 @@ def dist_sko(df, num):
             sum = 0
             for j in range(1, 10001):
                 sum += a[str(i)][:10000][j - 1]
-                filt.append(sum / j - mean)
+                filt.append(sum / j)
                 print(j)
 
-            axs[valid].plot(df['time'][:10000], a[str(i)][:10000] - mean)
+            axs[valid].plot(df['time'][:10000], a[str(i)][:10000])
             axs[valid].plot(df['time'][:10000], filt)
             axs[valid].set_title(f'РЭМ-{i}')
             axs[valid].set_xlabel('Время, с')
             axs[valid].set_ylabel('Дальность, м')
+            for spine in axs[valid].spines.values():
+                spine.set_color('black')
+                spine.set_linewidth(1.5)
+            axs[valid].set_facecolor('white')
+            axs[valid].grid(color='gray', alpha=0.7, linestyle='--')
             # axs[valid].set_ylim(-0.2, 0.2)
             valid += 1
 
@@ -167,6 +239,7 @@ def dist_sko(df, num):
     plt.subplots_adjust(hspace=1)
 
     # Отображаем график
+
     plt.savefig(f'{num}/png/2.png', dpi=600)
     plt.show()
 
@@ -187,12 +260,19 @@ def dist_sko(df, num):
             plt.xlabel('Время, с')
             plt.ylabel('Дальность, м')
             plt.title('Осреднение дальностей')
+            for spine in plt.gca().spines.values():
+                spine.set_color('black')
+                spine.set_linewidth(1.5)
+            plt.grid(color='gray', alpha=0.7, linestyle='--')
+            plt.gca().set_facecolor('white')
+            plt.savefig(f'{num}/png/3.png', dpi=600)
             plt.show()
             break
 
 
 def dist(df, num):
     plt.style.use("ggplot")
+
     # Строим графики
     for i in range(1, 9):
         if df[str(i)][1000] > 50:
@@ -208,7 +288,11 @@ def dist(df, num):
     plt.xlabel('Время, с')
     plt.ylabel('Дистанции, м')
     plt.title("Дальности")
-
+    for spine in plt.gca().spines.values():
+        spine.set_color('black')
+        spine.set_linewidth(1.5)
+    plt.gca().set_facecolor('white')
+    plt.grid(color='gray', alpha=0.7, linestyle='--')
     plt.savefig(f'{num}/png/1.png', dpi=600)
     # Отображаем график
     plt.show()
