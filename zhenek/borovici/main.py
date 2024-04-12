@@ -34,7 +34,7 @@ def rachet(df, xy, gnss, rtsln, num):
     count = 10000
     dist_with_pogr = [0] * count
     for i in range(count):
-        dist_with_pogr[i] = [df["1"][i]]
+        dist_with_pogr[i] = [df["1"][i] - 1]
         dist_with_pogr[i].append(df["2"][i])
         dist_with_pogr[i].append(df["3"][i])
         dist_with_pogr[i].append(df["4"][i])
@@ -316,6 +316,7 @@ def dist_sko(df, num, xyz):
     for i in range(1, 9):
         if df[str(i)][1000] > 50:
             valid += 1
+
     fig, axs = plt.subplots(valid, 1, figsize=(8, 10))
     valid = 0
     for i in range(1, 9):
@@ -328,11 +329,12 @@ def dist_sko(df, num, xyz):
             filt = []
             etalon = [etalon] * 10000
             sum = 0
+
             for j in range(1, 10001):
                 sum += a[str(i)][:10000][j - 1]
                 filt.append(sum / j)
-                print(j)
             raz_list[i - 1] = abs(etalon[0] - filt[-1])
+
             et_list[i - 1] = etalon[0]
             filt_list[i - 1] = filt[-1]
 
@@ -423,11 +425,11 @@ def dist(df, num, xyz):
         if df[str(i)][1000] > 50:
             mean = np.mean(df[str(i)])
             a = pd.DataFrame(df[str(i)])
-            # a = a.drop(a[a[str(i)] > mean + 50].index)[:10000]
+            a = a.drop(a[a[str(i)] > mean + 50].index)[:10000]
             plt.plot(df['time'][:10000], a[:10000], label=f'РЭМ-{i}')
 
     # Добавляем легенду
-    plt.legend()
+    plt.legend(loc='upper right')
 
     # Добавляем подписи к осям
     plt.xlabel('Время, с')
@@ -444,14 +446,52 @@ def dist(df, num, xyz):
 
 
 if __name__ == '__main__':
-    for i in (3, 4, 5, 7):
+    for i in (7,):
         df = pd.read_csv(f"{i}/im_dist.csv")
+        if i == 4:
+            df["1"] = df["1"] - 0.5
+            df["2"] = df["2"]
+            df["3"] = df["3"] + 0.7
+            df["4"] = df["4"] - 1.2
+            df["5"] = df["5"]
+            df["6"] = df["6"] - 2.3
+            df["7"] = df["7"] - 2.2
+            df["8"] = df["8"]
+
+        elif i == 5:
+            df["1"] = df["1"] - 2.6
+            df["2"] = df["2"] - 2.4
+            df["3"] = df["3"]
+            df["4"] = df["4"] - 2.2
+            df["5"] = df["5"]
+            df["6"] = df["6"] - 2.8
+            df["7"] = df["7"] - 2.2
+            df["8"] = df["8"]
+
+        elif i == 7:
+            df["1"] = df["1"]
+            df["2"] = df["2"]
+            df["3"] = df["3"] + 0.7
+            df["4"] = df["4"]
+            df["5"] = df["5"]
+            df["6"] = df["6"] - 1.4
+            df["7"] = df["7"] + 0.3
+            df["8"] = df["8"]
+
+
+
+
+
+
+
+
         xyz = pd.read_csv(f"{i}/xyz.csv")
         gnss = pd.read_csv(f"{i}/gnss.csv")
         rtsln = pd.read_csv(f"{i}/rtsln.csv")
-        # dist(df, i, xyz)
+        dist(df, i, xyz)
         dist_sko(df, i, xyz)
-        # rachet(df, xyz, gnss, rtsln, i)
+
+        rachet(df, xyz, gnss, rtsln, i)
 
     # for i in (1, 2, 6, 8):
     #     df = pd.read_csv(f"{i}/im_dist.csv")
