@@ -14,14 +14,21 @@ sns.set(style="whitegrid")
 
 
 def geographic_to_local(lat, lon, origin_lat, origin_lon):
-    origin_x = origin_lon * 20037508.34 / 180
-    origin_y = np.log(np.tan((90 + origin_lat) * np.pi / 360)) / (np.pi / 180)
-    origin_y = origin_y * 20037508.34 / 180
-
-    x = lon * 20037508.34 / 180 - origin_x
-    y = np.log(np.tan((90 + lat) * np.pi / 360)) / (np.pi / 180)
-    y = y * 20037508.34 / 180 - origin_y
+    R_earth = 6378137  # радиус Земли в метрах
+    dlat = np.radians(lat - origin_lat)
+    dlon = np.radians(lon - origin_lon)
+    x = R_earth * dlon * np.cos(np.radians(origin_lat))
+    y = R_earth * dlat
     return x, y
+
+
+def local_to_geographic(x, y, origin_lat, origin_lon):
+    R_earth = 6378137  # радиус Земли в метрах
+    dlat = y / R_earth
+    dlon = x / (R_earth * np.cos(np.radians(origin_lat)))
+    lat = np.degrees(dlat) + origin_lat
+    lon = np.degrees(dlon) + origin_lon
+    return lat, lon
 
 
 class BaseINS:
@@ -32,9 +39,9 @@ class BaseINS:
         self.imu_data, self.reference_data, self.heading_data = self.read_data()
         self.num_samples = len(self.imu_data)
         self.dt = np.mean(np.diff(self.imu_data['time']))
-        self.state = self.initialize_state()
         self.origin_lat = self.reference_data['lat'].iloc[0]
         self.origin_lon = self.reference_data['lon'].iloc[0]
+        self.state = self.initialize_state()
 
     def read_data(self) -> Tuple[pd.DataFrame, Optional[pd.DataFrame], Optional[pd.DataFrame]]:
         """
@@ -59,9 +66,9 @@ class BaseINS:
         """
         logging.info('Инициализация состояния с начальными данными из эталонной траектории')
         initial_position = (
-        self.reference_data['lat'].iloc[0], self.reference_data['lon'].iloc[0], self.reference_data['alt'].iloc[0])
+            self.reference_data['lat'].iloc[0], self.reference_data['lon'].iloc[0], self.reference_data['alt'].iloc[0])
         initial_velocity = (
-        self.reference_data['VN'].iloc[0], self.reference_data['VE'].iloc[0], self.reference_data['VD'].iloc[0])
+            self.reference_data['VN'].iloc[0], self.reference_data['VE'].iloc[0], self.reference_data['VD'].iloc[0])
         initial_orientation = (self.reference_data['roll'].iloc[0], self.reference_data['pitch'].iloc[0],
                                self.reference_data['heading'].iloc[0])
 
@@ -70,7 +77,7 @@ class BaseINS:
             'velocity': np.zeros((self.num_samples, 3)),
             'orientation': np.zeros((self.num_samples, 4))
         }
-        x, y = geographic_to_local(initial_position[0], initial_position[1], initial_position[0], initial_position[1])
+        x, y = geographic_to_local(initial_position[0], initial_position[1], self.origin_lat, self.origin_lon)
         state['position'][0] = [x, y, initial_position[2]]
         state['velocity'][0] = initial_velocity
         state['orientation'][0] = R.from_euler('xyz', initial_orientation, degrees=True).as_quat()
@@ -143,6 +150,13 @@ class BaseINS:
                                                                      center=True).mean().values
         orientation_error_smooth = pd.DataFrame(orientation_error).rolling(window=window_size, min_periods=1,
                                                                            center=True).mean().values
+
+        fig, axes = plt.subplots(3, 1, figsize=(12, 18))
+        sns.lineplot(x=self.state['position'][0], y=self.state['position'][1], ax=axes[0])
+        axes[0].set_title('Ошибка по X координате', fontsize=16)
+        axes[0].set_xlabel('Время (с)', fontsize=14)
+        axes[0].set_ylabel('Ошибка (м)', fontsize=14)
+        axes[0].grid(True)
 
         # Plot errors for positions
         fig, axes = plt.subplots(3, 1, figsize=(12, 18))
@@ -258,7 +272,6 @@ class INSWithoutCorrection(BaseINS):
 
             acc_world = orientation_new.apply(accs[i - 1])
             velocities[i] = velocities[i - 1] + acc_world * self.dt
-            positions[i] = positions[i - 1] + velocities[i] * self.dt
 
             # Коррекция угла курса по скорости
             vn, ve, _ = velocities[i]
@@ -266,6 +279,10 @@ class INSWithoutCorrection(BaseINS):
             orientation_euler = R.from_quat(orientations[i]).as_euler('xyz', degrees=True)
             orientation_euler[2] = heading
             orientations[i] = R.from_euler('xyz', orientation_euler, degrees=True).as_quat()
+
+            # Пересчет координат
+            local_velocity = orientation_new.apply(velocities[i])
+            positions[i] = positions[i - 1] + local_velocity * self.dt
 
         self.state['position'] = positions
         self.state['velocity'] = velocities
@@ -286,7 +303,6 @@ class INSWithCorrection(BaseINS):
         logging.info('Интеграция данных IMU с коррекцией')
 
         GRAVITY = 9.8175  # ускорение свободного падения в м/с²
-        correction_interval = int(1 / self.dt)  # Интервал коррекции (раз в 1 секунду)
 
         omegas = np.radians(self.imu_data[['gyro_x', 'gyro_y', 'gyro_z']].values) * self.dt
         accs = self.imu_data[['accel_x', 'accel_y', 'accel_z']].values
@@ -299,6 +315,8 @@ class INSWithCorrection(BaseINS):
         orientations = np.zeros((self.num_samples, 4))
         orientations[0] = self.state['orientation'][0]
 
+        gnss_indices = np.searchsorted(self.imu_data['time'], self.gnss_data['time'])
+
         for i in range(1, self.num_samples):
             delta_rotation = R.from_rotvec(omegas[i - 1])
             orientation_prev = R.from_quat(orientations[i - 1])
@@ -307,18 +325,18 @@ class INSWithCorrection(BaseINS):
 
             acc_world = orientation_new.apply(accs[i - 1])
             velocities[i] = velocities[i - 1] + acc_world * self.dt
-            positions[i] = positions[i - 1] + velocities[i] * self.dt
 
-            if i % correction_interval == 0:
-                gnss_time = self.imu_data['time'][i]
-                gnss_interp = self.interpolate_gnss_data(gnss_time)
-                positions[i] = gnss_interp['position']
-                velocities[i] = gnss_interp['velocity']
-
-                # Корректировка углов ориентации
-                reference_interp = self.interpolate_reference_data(gnss_time)
-                orientations[i] = R.from_euler('xyz', [reference_interp['roll'], reference_interp['pitch'],
-                                                       reference_interp['heading']], degrees=True).as_quat()
+            if i in gnss_indices:
+                gnss_index = np.where(gnss_indices == i)[0][0]
+                positions[i-1] = np.array(geographic_to_local(
+                    self.gnss_data['lat'].iloc[gnss_index], self.gnss_data['lon'].iloc[gnss_index],
+                    self.origin_lat, self.origin_lon
+                ) + (self.gnss_data['alt'].iloc[gnss_index],))
+                velocities[i] = [
+                    self.gnss_data['VN'].iloc[gnss_index],
+                    self.gnss_data['VE'].iloc[gnss_index],
+                    self.gnss_data['VD'].iloc[gnss_index]
+                ]
 
             # Коррекция угла курса по магнитометру
             heading_time = self.imu_data['time'][i]
@@ -327,46 +345,14 @@ class INSWithCorrection(BaseINS):
             orientation_euler[2] = heading
             orientations[i] = R.from_euler('xyz', orientation_euler, degrees=True).as_quat()
 
+            # Пересчет координат
+            local_velocity = orientation_new.apply(velocities[i])
+            positions[i] = positions[i - 1] + local_velocity * self.dt
+
         self.state['position'] = positions
         self.state['velocity'] = velocities
         self.state['orientation'] = orientations
         logging.info('Интеграция данных IMU с коррекцией завершена')
-
-    def interpolate_gnss_data(self, time: float) -> dict:
-        """
-        Интерполяция данных GNSS для конкретного времени.
-
-        :param time: Временная метка.
-        :return: Словарь с интерполированными данными GNSS.
-        """
-        gnss_interp = {}
-        gnss_interp['position'] = geographic_to_local(
-            np.interp(time, self.gnss_data['time'], self.gnss_data['lat']),
-            np.interp(time, self.gnss_data['time'], self.gnss_data['lon']),
-            self.origin_lat,
-            self.origin_lon
-        )
-        gnss_interp['position'] = np.append(gnss_interp['position'],
-                                            np.interp(time, self.gnss_data['time'], self.gnss_data['alt']))
-        gnss_interp['velocity'] = [
-            np.interp(time, self.gnss_data['time'], self.gnss_data['VN']),
-            np.interp(time, self.gnss_data['time'], self.gnss_data['VE']),
-            np.interp(time, self.gnss_data['time'], self.gnss_data['VD'])
-        ]
-        return gnss_interp
-
-    def interpolate_reference_data(self, time: float) -> dict:
-        """
-        Интерполяция эталонных данных для конкретного времени.
-
-        :param time: Временная метка.
-        :return: Интерполированные эталонные данные.
-        """
-        reference_interp = {}
-        reference_interp['roll'] = np.interp(time, self.reference_data['time'], self.reference_data['roll'])
-        reference_interp['pitch'] = np.interp(time, self.reference_data['time'], self.reference_data['pitch'])
-        reference_interp['heading'] = np.interp(time, self.reference_data['time'], self.reference_data['heading'])
-        return reference_interp
 
 
 class INSWithVelocityCorrection(BaseINS):
@@ -380,7 +366,6 @@ class INSWithVelocityCorrection(BaseINS):
         logging.info('Интеграция данных IMU с коррекцией скорости')
 
         GRAVITY = 9.8175  # ускорение свободного падения в м/с²
-        correction_interval = int(1 / self.dt)  # Интервал коррекции (раз в 1 секунду)
 
         omegas = np.radians(self.imu_data[['gyro_x', 'gyro_y', 'gyro_z']].values) * self.dt
         accs = self.imu_data[['accel_x', 'accel_y', 'accel_z']].values
@@ -393,6 +378,8 @@ class INSWithVelocityCorrection(BaseINS):
         orientations = np.zeros((self.num_samples, 4))
         orientations[0] = self.state['orientation'][0]
 
+        reference_indices = np.searchsorted(self.imu_data['time'], self.reference_data['time'])
+
         for i in range(1, self.num_samples):
             delta_rotation = R.from_rotvec(omegas[i - 1])
             orientation_prev = R.from_quat(orientations[i - 1])
@@ -401,11 +388,14 @@ class INSWithVelocityCorrection(BaseINS):
 
             acc_world = orientation_new.apply(accs[i - 1])
             velocities[i] = velocities[i - 1] + acc_world * self.dt
-            positions[i] = positions[i - 1] + velocities[i] * self.dt
 
-            if i % correction_interval == 0:
-                ref_time = self.imu_data['time'][i]
-                velocities[i] = self.interpolate_reference_velocity(ref_time)
+            if i in reference_indices:
+                ref_index = np.where(reference_indices == i)[0][0]
+                velocities[i] = [
+                    self.reference_data['VN'].iloc[ref_index],
+                    self.reference_data['VE'].iloc[ref_index],
+                    self.reference_data['VD'].iloc[ref_index]
+                ]
 
             # Коррекция угла курса по магнитометру
             heading_time = self.imu_data['time'][i]
@@ -414,24 +404,14 @@ class INSWithVelocityCorrection(BaseINS):
             orientation_euler[2] = heading
             orientations[i] = R.from_euler('xyz', orientation_euler, degrees=True).as_quat()
 
+            # Пересчет координат
+            local_velocity = orientation_new.apply(velocities[i])
+            positions[i] = positions[i - 1] + local_velocity * self.dt
+
         self.state['position'] = positions
         self.state['velocity'] = velocities
         self.state['orientation'] = orientations
         logging.info('Интеграция данных IMU с коррекцией скорости завершена')
-
-    def interpolate_reference_velocity(self, time: float) -> np.ndarray:
-        """
-        Интерполяция эталонных данных скорости для конкретного времени.
-
-        :param time: Временная метка.
-        :return: Интерполированные эталонные данные скорости.
-        """
-        ref_velocity = [
-            np.interp(time, self.reference_data['time'], self.reference_data['VN']),
-            np.interp(time, self.reference_data['time'], self.reference_data['VE']),
-            np.interp(time, self.reference_data['time'], self.reference_data['VD'])
-        ]
-        return np.array(ref_velocity)
 
 
 def main():
@@ -446,13 +426,13 @@ def main():
     ins_with_correction = INSWithCorrection(imu_file, reference_file, gnss_file, heading_file)
     ins_with_correction.run(start_time, end_time)
 
-    # Запуск без коррекции
-    ins_without_correction = INSWithoutCorrection(imu_file, reference_file, heading_file)
-    ins_without_correction.run(start_time, end_time)
-
-    # Запуск с коррекцией по скорости
-    ins_with_velocity_correction = INSWithVelocityCorrection(imu_file, reference_file, heading_file)
-    ins_with_velocity_correction.run(start_time, end_time)
+    # # Запуск без коррекции
+    # ins_without_correction = INSWithoutCorrection(imu_file, reference_file, heading_file)
+    # ins_without_correction.run(start_time, end_time)
+    #
+    # # Запуск с коррекцией по скорости
+    # ins_with_velocity_correction = INSWithVelocityCorrection(imu_file, reference_file, heading_file)
+    # ins_with_velocity_correction.run(start_time, end_time)
 
 
 if __name__ == "__main__":
