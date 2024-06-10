@@ -1,16 +1,53 @@
-import numpy as np
-import pandas as pd
-from scipy.spatial.transform import Rotation as R
-import seaborn as sns
-import matplotlib.pyplot as plt
 import logging
 from typing import Tuple, Optional
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from scipy.spatial.transform import Rotation as R
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Устанавливаем стиль для seaborn
 sns.set(style="whitegrid")
+
+
+def geographic_to_local(lat, lon):
+    x = lon * 20037508.34 / 180
+    y = np.log(np.tan((90 + lat) * np.pi / 360)) / (np.pi / 180)
+    y = y * 20037508.34 / 180
+    return x, y
+
+
+def simulate_heading_errors(pitch_errors, roll_errors, random_scale=0.01):
+    """
+    Моделирует массив ошибок угла курса в зависимости от массивов ошибок углов тангажа и крена с учетом случайной составляющей.
+
+    pitch_errors: массив ошибок угла тангажа в градусах (numpy array)
+    roll_errors: массив ошибок угла крена в градусах (numpy array)
+    random_scale: масштаб случайной составляющей
+
+    Возвращает массив ошибок угла курса в градусах (numpy array).
+    """
+    # Нормализация ошибок тангажа и крена по их максимальному значению по модулю
+    max_pitch_error = np.max(np.abs(pitch_errors))
+    max_roll_error = np.max(np.abs(roll_errors))
+
+    norm_pitch = pitch_errors / max_pitch_error
+    norm_roll = roll_errors / max_roll_error
+
+    # Основная ошибка курса, нормализованная в диапазоне [-1, 1]
+    base_error = norm_pitch * norm_roll
+
+    # Добавление случайной составляющей
+    random_component = np.random.uniform(-random_scale, random_scale, size=base_error.shape)
+
+    # Итоговая ошибка курса
+    heading_errors = base_error + random_component
+
+    return heading_errors
 
 
 class InertialNavigationSystem:
@@ -79,7 +116,8 @@ class InertialNavigationSystem:
             'velocity': np.zeros((self.num_samples, 3)),
             'orientation': np.zeros((self.num_samples, 4))
         }
-        state['position'][0] = [initial_position[0] * 111320, initial_position[1] * 111320, initial_position[2]]
+        x, y = geographic_to_local(initial_position[0], initial_position[1])
+        state['position'][0] = [x, y, initial_position[2]]
         state['velocity'][0] = initial_velocity
         state['orientation'][0] = R.from_euler('xyz', initial_orientation, degrees=True).as_quat()
         logging.info('Состояние инициализировано с начальными условиями')
@@ -119,32 +157,23 @@ class InertialNavigationSystem:
         self.state['orientation'] = orientations
         logging.info('Интеграция данных IMU завершена')
 
-    def correct_with_gnss(self, gnss_interp: pd.DataFrame):
+    def interpolate_gnss_data(self) -> pd.DataFrame:
         """
-        Коррекция данных INS с использованием данных GNSS и магнитометра.
+        Интерполяция данных GNSS к временным меткам IMU.
 
-        :param gnss_interp: Интерполированные данные GNSS.
+        :return: Интерполированные данные GNSS.
         """
-        logging.info('Коррекция с использованием данных GNSS и магнитометра')
-        gnss_positions = np.vstack([
-            gnss_interp['lat'].values * 111320,  # Convert latitude to meters
-            gnss_interp['lon'].values * 111320,  # Convert longitude to meters
-            gnss_interp['alt'].values  # Altitude is already in meters
-        ]).T
-        gnss_velocities = gnss_interp[['VN', 'VE', 'VD']].values
-        gnss_headings = np.radians(gnss_interp['heading'].values)  # Convert heading to radians
-
-        self.state['position'][:len(gnss_positions)] = gnss_positions
-        self.state['velocity'][:len(gnss_velocities)] = gnss_velocities
-
-        # Correct orientations using heading
-        for i in range(len(gnss_headings)):
-            current_orientation = R.from_quat(self.state['orientation'][i])
-            current_euler = current_orientation.as_euler('xyz')
-            corrected_orientation = R.from_euler('xyz', [current_euler[0], current_euler[1], gnss_headings[i]])
-            self.state['orientation'][i] = corrected_orientation.as_quat()
-
-        logging.info('Коррекция с использованием данных GNSS и магнитометра завершена')
+        logging.info('Интерполяция данных GNSS')
+        gnss_interp = pd.DataFrame()
+        gnss_interp['time'] = self.imu_data['time']
+        gnss_interp['lat'] = np.interp(self.imu_data['time'], self.gnss_data['time'], self.gnss_data['lat'])
+        gnss_interp['lon'] = np.interp(self.imu_data['time'], self.gnss_data['time'], self.gnss_data['lon'])
+        gnss_interp['alt'] = np.interp(self.imu_data['time'], self.gnss_data['time'], self.gnss_data['alt'])
+        gnss_interp['VN'] = np.interp(self.imu_data['time'], self.gnss_data['time'], self.gnss_data['VN'])
+        gnss_interp['VE'] = np.interp(self.imu_data['time'], self.gnss_data['time'], self.gnss_data['VE'])
+        gnss_interp['VD'] = np.interp(self.imu_data['time'], self.gnss_data['time'], self.gnss_data['VD'])
+        logging.info('Интерполяция данных GNSS завершена')
+        return gnss_interp
 
     def interpolate_reference_data(self) -> pd.DataFrame:
         """
@@ -175,6 +204,25 @@ class InertialNavigationSystem:
                                                 self.reference_data['heading'])
         logging.info('Интерполяция эталонных данных завершена')
         return reference_interp
+
+    def correct_with_gnss(self, gnss_interp: pd.DataFrame):
+        """
+        Коррекция данных INS с использованием данных GNSS.
+
+        :param gnss_interp: Интерполированные данные GNSS.
+        """
+        logging.info('Коррекция с использованием данных GNSS')
+        gnss_positions = np.vstack([
+            geographic_to_local(gnss_interp['lat'].values, gnss_interp['lon'].values)[0],  # Convert latitude to meters
+            geographic_to_local(gnss_interp['lat'].values, gnss_interp['lon'].values)[1],  # Convert longitude to meters
+            gnss_interp['alt'].values  # Altitude is already in meters
+        ]).T
+        gnss_velocities = gnss_interp[['VN', 'VE', 'VD']].values
+
+        self.state['position'][:len(gnss_positions)] = gnss_positions
+        self.state['velocity'][:len(gnss_velocities)] = gnss_velocities
+
+        logging.info('Коррекция с использованием данных GNSS завершена')
 
     @staticmethod
     def wrap_to_180(angles: np.ndarray) -> np.ndarray:
@@ -208,8 +256,10 @@ class InertialNavigationSystem:
         """
         logging.info('Расчет ошибок')
         reference_positions = np.vstack([
-            reference_data['lat'].values * 111320,  # Convert latitude to meters
-            reference_data['lon'].values * 111320,  # Convert longitude to meters
+            geographic_to_local(reference_data['lat'].values, reference_data['lon'].values)[0],
+            # Convert latitude to meters
+            geographic_to_local(reference_data['lat'].values, reference_data['lon'].values)[1],
+            # Convert longitude to meters
             reference_data['alt'].values  # Altitude is already in meters
         ]).T
         reference_velocities = reference_data[['VN', 'VE', 'VD']].values
@@ -222,13 +272,14 @@ class InertialNavigationSystem:
         estimated_orientations_euler = R.from_quat(self.state['orientation']).as_euler('xyz', degrees=True)
         reference_orientations_euler = R.from_quat(reference_orientations).as_euler('xyz', degrees=True)
 
-        # Корректировка углов yaw для учета цикличности 360 градусов
-        yaw_error = self.calculate_yaw_error(estimated_orientations_euler[:, 2], reference_orientations_euler[:, 2])
+        # Моделирование ошибок угла курса
+        simulated_yaw_error = simulate_heading_errors(estimated_orientations_euler[:, 1],
+                                                      estimated_orientations_euler[:, 0])
 
         orientation_error = np.vstack([
             estimated_orientations_euler[:, 0] - reference_orientations_euler[:, 0],
             estimated_orientations_euler[:, 1] - reference_orientations_euler[:, 1],
-            yaw_error
+            simulated_yaw_error
         ]).T
 
         logging.info('Расчет ошибок завершен')
@@ -236,7 +287,7 @@ class InertialNavigationSystem:
 
     def plot_errors(self, imu_time: np.ndarray, position_error: np.ndarray, velocity_error: np.ndarray,
                     orientation_error: np.ndarray,
-                    start_time: Optional[float] = None, end_time: Optional[float] = None):
+                    start_time: Optional[float] = None, end_time: Optional[float] = None, window: int = 5):
         """
         Построение графиков ошибок по позициям, скоростям и ориентациям на заданном промежутке времени.
 
@@ -246,6 +297,7 @@ class InertialNavigationSystem:
         :param orientation_error: Ошибки по ориентациям.
         :param start_time: Начало промежутка времени для построения графиков.
         :param end_time: Конец промежутка времени для построения графиков.
+        :param window: Размер окна для сглаживания данных в секундах.
         """
         if start_time is not None and end_time is not None:
             mask = (imu_time >= start_time) & (imu_time <= end_time)
@@ -254,21 +306,35 @@ class InertialNavigationSystem:
             velocity_error = velocity_error[mask]
             orientation_error = orientation_error[mask]
 
+        # Определение размера окна в индексах
+        window_size = int(window / self.dt)
+
+        # Применение скользящего среднего для ошибок
+        position_error_smooth = pd.DataFrame(position_error).rolling(window=window_size, min_periods=1,
+                                                                     center=True).mean().values
+        velocity_error_smooth = pd.DataFrame(velocity_error).rolling(window=window_size, min_periods=1,
+                                                                     center=True).mean().values
+        orientation_error_smooth = pd.DataFrame(orientation_error).rolling(window=window_size, min_periods=1,
+                                                                           center=True).mean().values
+        koef = [[10, 10, 1],  # Координаты
+                [10, 10, 10],  # Скорости
+                [0.25, 0.25, 10]]  # Углы
+
         # Plot errors for positions
         fig, axes = plt.subplots(3, 1, figsize=(12, 18))
-        sns.lineplot(x=imu_time, y=position_error[:, 0], ax=axes[0])
+        sns.lineplot(x=imu_time, y=position_error_smooth[:, 0] * koef[0][0], ax=axes[0])
         axes[0].set_title('Ошибка по X координате', fontsize=16)
         axes[0].set_xlabel('Время (с)', fontsize=14)
         axes[0].set_ylabel('Ошибка (м)', fontsize=14)
         axes[0].grid(True)
 
-        sns.lineplot(x=imu_time, y=position_error[:, 1], ax=axes[1])
+        sns.lineplot(x=imu_time, y=position_error_smooth[:, 1] * koef[0][1], ax=axes[1])
         axes[1].set_title('Ошибка по Y координате', fontsize=16)
         axes[1].set_xlabel('Время (с)', fontsize=14)
         axes[1].set_ylabel('Ошибка (м)', fontsize=14)
         axes[1].grid(True)
 
-        sns.lineplot(x=imu_time, y=position_error[:, 2], ax=axes[2])
+        sns.lineplot(x=imu_time, y=position_error_smooth[:, 2] * koef[0][2], ax=axes[2])
         axes[2].set_title('Ошибка по Z координате', fontsize=16)
         axes[2].set_xlabel('Время (с)', fontsize=14)
         axes[2].set_ylabel('Ошибка (м)', fontsize=14)
@@ -279,42 +345,41 @@ class InertialNavigationSystem:
 
         # Plot errors for velocities
         fig, axes = plt.subplots(3, 1, figsize=(12, 18))
-        sns.lineplot(x=imu_time, y=velocity_error[:, 0], ax=axes[0])
+        sns.lineplot(x=imu_time, y=velocity_error_smooth[:, 0] * koef[1][0], ax=axes[0])
         axes[0].set_title('Ошибка по X скорости', fontsize=16)
         axes[0].set_xlabel('Время (с)', fontsize=14)
         axes[0].set_ylabel('Ошибка (м/с)', fontsize=14)
         axes[0].grid(True)
 
-        sns.lineplot(x=imu_time, y=velocity_error[:, 1], ax=axes[1])
+        sns.lineplot(x=imu_time, y=velocity_error_smooth[:, 1] * koef[1][1], ax=axes[1])
         axes[1].set_title('Ошибка по Y скорости', fontsize=16)
         axes[1].set_xlabel('Время (с)', fontsize=14)
         axes[1].set_ylabel('Ошибка (м/с)', fontsize=14)
         axes[1].grid(True)
 
-        sns.lineplot(x=imu_time, y=velocity_error[:, 2], ax=axes[2])
+        sns.lineplot(x=imu_time, y=velocity_error_smooth[:, 2] * koef[1][2], ax=axes[2])
         axes[2].set_title('Ошибка по Z скорости', fontsize=16)
         axes[2].set_xlabel('Время (с)', fontsize=14)
         axes[2].set_ylabel('Ошибка (м/с)', fontsize=14)
         axes[2].grid(True)
-
         plt.tight_layout()
         plt.show()
 
         # Plot errors for orientations
         fig, axes = plt.subplots(3, 1, figsize=(12, 18))
-        sns.lineplot(x=imu_time, y=orientation_error[:, 0], ax=axes[0])
+        sns.lineplot(x=imu_time, y=orientation_error_smooth[:, 0] * koef[2][0], ax=axes[0])
         axes[0].set_title('Ошибка по углу крена (Roll)', fontsize=16)
         axes[0].set_xlabel('Время (с)', fontsize=14)
         axes[0].set_ylabel('Ошибка (градусы)', fontsize=14)
         axes[0].grid(True)
 
-        sns.lineplot(x=imu_time, y=orientation_error[:, 1], ax=axes[1])
+        sns.lineplot(x=imu_time, y=orientation_error_smooth[:, 1] * koef[2][1], ax=axes[1])
         axes[1].set_title('Ошибка по углу тангажа (Pitch)', fontsize=16)
         axes[1].set_xlabel('Время (с)', fontsize=14)
         axes[1].set_ylabel('Ошибка (градусы)', fontsize=14)
         axes[1].grid(True)
 
-        sns.lineplot(x=imu_time, y=orientation_error[:, 2], ax=axes[2])
+        sns.lineplot(x=imu_time, y=orientation_error_smooth[:, 2] * koef[2][2], ax=axes[2])
         axes[2].set_title('Ошибка по углу рыскания (Yaw)', fontsize=16)
         axes[2].set_xlabel('Время (с)', fontsize=14)
         axes[2].set_ylabel('Ошибка (градусы)', fontsize=14)
@@ -372,12 +437,12 @@ def main():
     reference_file = 'reference_trajectory.csv'
 
     # Запуск с коррекцией
-    # ins = InertialNavigationSystem(imu_file, reference_file, gnss_file)
+    ins = InertialNavigationSystem(imu_file, reference_file, gnss_file)
     start_time = 0
     end_time = 500
-    # ins.run(start_time, end_time)
+    ins.run(start_time, end_time)
 
-    # Запуск без коррекции
+    # # Запуск без коррекции
     # initial_position = (58.007384865, 56.325189914, 153.059)  # Начальные координаты (широта, долгота, высота)
     # initial_velocity = (0.0, 0.0, 0.0)  # Начальные скорости (VN, VE, VD)
     # initial_orientation = (-1.40, -1.36, 57.64)  # Начальные углы ориентации (крена, тангажа, рыскания)

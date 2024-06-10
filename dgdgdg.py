@@ -1,50 +1,26 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
-
-def simulate_heading_error(pitch_error_deg, roll_error_deg, random_scale=0.3):
+def calculate_azimuthal_angle(VN, VE):
     """
-    Моделирует ошибку угла курса в зависимости от ошибки угла тангажа и крена с учетом случайной составляющей.
+    Calculate the azimuthal angle from northern and eastern components of velocity.
 
-    pitch_error_deg: ошибка угла тангажа в градусах (-5 до 5)
-    roll_error_deg: ошибка угла крена в градусах (-5 до 5)
-    random_scale: масштаб случайной составляющей
+    Parameters:
+    VN (float): Northern component of velocity.
+    VE (float): Eastern component of velocity.
 
-    Возвращает ошибку угла курса в градусах (-1 до 1).
+    Returns:
+    float: Azimuthal angle in degrees.
     """
-    # Нормализуем ошибки тангажа и крена
-    norm_pitch = pitch_error_deg / 5.0
-    norm_roll = roll_error_deg / 5.0
+    theta_rad = np.arctan2(VE, VN)
+    theta_deg = np.degrees(theta_rad)
+    if theta_deg < 0:
+        theta_deg += 360
+    heading = np.degrees(np.arctan2(VN, VE)) % 360
+    gggg = (np.degrees(np.arctan2(VE, VN)) + 360) % 360
+    return theta_deg, heading, gggg
 
-    # Основная ошибка курса
-    base_error = norm_pitch * norm_roll
-
-    # Добавление случайной составляющей
-    random_component = np.random.uniform(-random_scale, random_scale)
-
-    # Итоговая ошибка курса
-    heading_error_deg = base_error + random_component
-    heading_error_deg = np.clip(heading_error_deg, -1, 1)
-
-    return heading_error_deg
-
-
-# Генерация данных для демонстрации
-pitch_errors = np.linspace(-5, 5, 100)  # Ошибки тангажа от -5 до 5 градусов
-roll_errors = np.linspace(-5, 5, 100)  # Ошибки крена от -5 до 5 градусов
-
-# Массив для хранения ошибок курса
-heading_errors = np.zeros((len(pitch_errors), len(roll_errors)))
-
-for i, pitch_error in enumerate(pitch_errors):
-    for j, roll_error in enumerate(roll_errors):
-        heading_errors[i, j] = simulate_heading_error(pitch_error, roll_error)
-
-# Визуализация ошибок курса
-plt.figure(figsize=(10, 6))
-plt.contourf(roll_errors, pitch_errors, heading_errors, 20, cmap='viridis')
-plt.colorbar(label='Ошибка угла курса (градусы)')
-plt.xlabel('Ошибка угла крена (градусы)')
-plt.ylabel('Ошибка угла тангажа (градусы)')
-plt.title('Ошибка угла курса в зависимости от ошибок углов тангажа и крена')
-plt.show()
+# Пример использования:
+VN = -11.605  # северная составляющая скорости
+VE = 8.300   # восточная составляющая скорости
+azimuthal_angle = calculate_azimuthal_angle(VN, VE)
+print(f"Азимутальный угол: {azimuthal_angle[0]} градусов\n{azimuthal_angle[1]}\n{azimuthal_angle[2]}")
