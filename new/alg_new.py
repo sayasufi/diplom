@@ -1,10 +1,11 @@
-import numpy as np
-import pandas as pd
-from scipy.spatial.transform import Rotation as R
-import seaborn as sns
-import matplotlib.pyplot as plt
 import logging
 from typing import Tuple, Optional
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from scipy.spatial.transform import Rotation as R
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -99,7 +100,7 @@ class BaseINS:
                                 self.origin_lon)[1],
             self.reference_data['alt'].values  # Altitude is already in meters
         ]).T
-        reference_velocities = self.reference_data[['VN', 'VE', 'VD']].values
+        reference_velocities = self.reference_data[['VE', 'VN', 'VD']].values
         reference_orientations = R.from_euler('xyz', self.reference_data[['roll', 'pitch', 'heading']].values,
                                               degrees=True).as_quat()
 
@@ -150,13 +151,6 @@ class BaseINS:
                                                                      center=True).mean().values
         orientation_error_smooth = pd.DataFrame(orientation_error).rolling(window=window_size, min_periods=1,
                                                                            center=True).mean().values
-
-        fig, axes = plt.subplots(3, 1, figsize=(12, 18))
-        sns.lineplot(x=self.state['position'][0], y=self.state['position'][1], ax=axes[0])
-        axes[0].set_title('Ошибка по X координате', fontsize=16)
-        axes[0].set_xlabel('Время (с)', fontsize=14)
-        axes[0].set_ylabel('Ошибка (м)', fontsize=14)
-        axes[0].grid(True)
 
         # Plot errors for positions
         fig, axes = plt.subplots(3, 1, figsize=(12, 18))
@@ -259,9 +253,9 @@ class INSWithoutCorrection(BaseINS):
         # Коррекция ускорения по оси Z
         accs[:, 2] += GRAVITY
 
-        positions = np.zeros((self.num_samples, 3))
-        velocities = np.zeros((self.num_samples, 3))
-        orientations = np.zeros((self.num_samples, 4))
+        positions = self.state['position']
+        velocities = self.state['velocity']
+        orientations = self.state['orientation']
         orientations[0] = self.state['orientation'][0]
 
         for i in range(1, self.num_samples):
@@ -271,18 +265,17 @@ class INSWithoutCorrection(BaseINS):
             orientations[i] = orientation_new.as_quat()
 
             acc_world = orientation_new.apply(accs[i - 1])
-            velocities[i] = velocities[i - 1] + acc_world * self.dt
+            velocities[i] = velocities[i - 1] - acc_world * self.dt
 
-            # Коррекция угла курса по скорости
+            # # Коррекция угла курса по скорости
             vn, ve, _ = velocities[i]
-            heading = np.degrees(np.arctan2(ve, vn)) % 360
+            heading = (np.degrees(np.arctan2(ve, vn)) + 360) % 360
             orientation_euler = R.from_quat(orientations[i]).as_euler('xyz', degrees=True)
             orientation_euler[2] = heading
             orientations[i] = R.from_euler('xyz', orientation_euler, degrees=True).as_quat()
 
             # Пересчет координат
-            local_velocity = orientation_new.apply(velocities[i])
-            positions[i] = positions[i - 1] + local_velocity * self.dt
+            positions[i] = positions[i - 1] + velocities[i] * self.dt
 
         self.state['position'] = positions
         self.state['velocity'] = velocities
@@ -310,9 +303,9 @@ class INSWithCorrection(BaseINS):
         # Коррекция ускорения по оси Z
         accs[:, 2] += GRAVITY
 
-        positions = np.zeros((self.num_samples, 3))
-        velocities = np.zeros((self.num_samples, 3))
-        orientations = np.zeros((self.num_samples, 4))
+        positions = self.state['position']
+        velocities = self.state['velocity']
+        orientations = self.state['orientation']
         orientations[0] = self.state['orientation'][0]
 
         gnss_indices = np.searchsorted(self.imu_data['time'], self.gnss_data['time'])
@@ -328,13 +321,13 @@ class INSWithCorrection(BaseINS):
 
             if i in gnss_indices:
                 gnss_index = np.where(gnss_indices == i)[0][0]
-                positions[i-1] = np.array(geographic_to_local(
+                positions[i - 1] = np.array(geographic_to_local(
                     self.gnss_data['lat'].iloc[gnss_index], self.gnss_data['lon'].iloc[gnss_index],
                     self.origin_lat, self.origin_lon
                 ) + (self.gnss_data['alt'].iloc[gnss_index],))
                 velocities[i] = [
-                    self.gnss_data['VN'].iloc[gnss_index],
                     self.gnss_data['VE'].iloc[gnss_index],
+                    self.gnss_data['VN'].iloc[gnss_index],
                     self.gnss_data['VD'].iloc[gnss_index]
                 ]
 
@@ -346,8 +339,7 @@ class INSWithCorrection(BaseINS):
             orientations[i] = R.from_euler('xyz', orientation_euler, degrees=True).as_quat()
 
             # Пересчет координат
-            local_velocity = orientation_new.apply(velocities[i])
-            positions[i] = positions[i - 1] + local_velocity * self.dt
+            positions[i] = positions[i - 1] + velocities[i] * self.dt
 
         self.state['position'] = positions
         self.state['velocity'] = velocities
@@ -373,9 +365,9 @@ class INSWithVelocityCorrection(BaseINS):
         # Коррекция ускорения по оси Z
         accs[:, 2] += GRAVITY
 
-        positions = np.zeros((self.num_samples, 3))
-        velocities = np.zeros((self.num_samples, 3))
-        orientations = np.zeros((self.num_samples, 4))
+        positions = self.state['position']
+        velocities = self.state['velocity']
+        orientations = self.state['orientation']
         orientations[0] = self.state['orientation'][0]
 
         reference_indices = np.searchsorted(self.imu_data['time'], self.reference_data['time'])
@@ -392,8 +384,8 @@ class INSWithVelocityCorrection(BaseINS):
             if i in reference_indices:
                 ref_index = np.where(reference_indices == i)[0][0]
                 velocities[i] = [
-                    self.reference_data['VN'].iloc[ref_index],
                     self.reference_data['VE'].iloc[ref_index],
+                    self.reference_data['VN'].iloc[ref_index],
                     self.reference_data['VD'].iloc[ref_index]
                 ]
 
@@ -405,8 +397,7 @@ class INSWithVelocityCorrection(BaseINS):
             orientations[i] = R.from_euler('xyz', orientation_euler, degrees=True).as_quat()
 
             # Пересчет координат
-            local_velocity = orientation_new.apply(velocities[i])
-            positions[i] = positions[i - 1] + local_velocity * self.dt
+            positions[i] = positions[i - 1] + velocities[i] * self.dt
 
         self.state['position'] = positions
         self.state['velocity'] = velocities
@@ -422,14 +413,14 @@ def main():
     start_time = 2
     end_time = 1750
 
-    # Запуск с коррекцией по GNSS
-    ins_with_correction = INSWithCorrection(imu_file, reference_file, gnss_file, heading_file)
-    ins_with_correction.run(start_time, end_time)
+    # # Запуск с коррекцией по GNSS
+    # ins_with_correction = INSWithCorrection(imu_file, reference_file, gnss_file, heading_file)
+    # ins_with_correction.run(start_time, end_time)
 
-    # # Запуск без коррекции
-    # ins_without_correction = INSWithoutCorrection(imu_file, reference_file, heading_file)
-    # ins_without_correction.run(start_time, end_time)
-    #
+    # Запуск без коррекции
+    ins_without_correction = INSWithoutCorrection(imu_file, reference_file, heading_file)
+    ins_without_correction.run(start_time, end_time)
+
     # # Запуск с коррекцией по скорости
     # ins_with_velocity_correction = INSWithVelocityCorrection(imu_file, reference_file, heading_file)
     # ins_with_velocity_correction.run(start_time, end_time)
